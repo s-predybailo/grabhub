@@ -174,9 +174,10 @@ private fun DetailContent(
             Text("License: $it", style = MaterialTheme.typography.bodySmall)
         }
 
-        if (!item.tags.isNullOrEmpty()) {
+        val tags = item.tags
+        if (!tags.isNullOrEmpty()) {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                item.tags.forEach { tag ->
+                tags.forEach { tag ->
                     AssistChip(onClick = {}, label = { Text(tag) })
                 }
             }

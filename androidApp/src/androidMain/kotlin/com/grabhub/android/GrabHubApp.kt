@@ -15,7 +15,7 @@ class GrabHubApp : Application() {
             androidContext(this@GrabHubApp)
             modules(
                 sharedModule(
-                    databaseDriverFactory = DatabaseDriverFactory(androidContext()),
+                    databaseDriverFactory = DatabaseDriverFactory(this@GrabHubApp),
                     thingiverseAccessToken = BuildConfig.THINGIVERSE_ACCESS_TOKEN,
                 ),
                 androidModule,
