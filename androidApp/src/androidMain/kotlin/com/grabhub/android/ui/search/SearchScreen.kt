@@ -22,6 +22,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -29,15 +30,14 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -47,8 +47,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.grabhub.android.BuildConfig
@@ -62,6 +62,7 @@ import com.grabhub.domain.LicenseFilter
 import com.grabhub.domain.PriceFilter
 import com.grabhub.domain.ProviderError
 import com.grabhub.domain.SortOrder
+import com.grabhub.domain.SourceType
 import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -74,29 +75,40 @@ fun SearchScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val (viewMode, setViewMode) = rememberResultsViewMode()
     var filtersExpanded by rememberSaveable { mutableStateOf(false) }
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
+    var providerErrorsDismissed by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(prefilledQuery) {
         prefilledQuery?.let { viewModel.search(it) }
     }
 
+    LaunchedEffect(uiState.errors) {
+        if (uiState.errors.isNotEmpty()) {
+            providerErrorsDismissed = false
+        }
+    }
+
     Scaffold(
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            LargeTopAppBar(
+            TopAppBar(
                 title = {
                     Column {
-                        Text("GrabHub")
                         Text(
-                            text = "Search 3D models across sources · v${BuildConfig.VERSION_NAME}",
-                            style = MaterialTheme.typography.bodyMedium,
+                            text = "GrabHub",
+                            style = MaterialTheme.typography.titleLarge,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Text(
+                            text = "Search 3D models · v${BuildConfig.VERSION_NAME}",
+                            style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                         )
                     }
                 },
-                scrollBehavior = scrollBehavior,
-                colors = TopAppBarDefaults.largeTopAppBarColors(
-                    scrolledContainerColor = MaterialTheme.colorScheme.surface,
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
                 ),
             )
         },
@@ -159,8 +171,11 @@ fun SearchScreen(
                 }
 
                 uiState.results.isNotEmpty() -> {
-                    if (uiState.errors.isNotEmpty()) {
-                        ProviderErrorsBanner(errors = uiState.errors)
+                    if (uiState.errors.isNotEmpty() && !providerErrorsDismissed) {
+                        ProviderErrorsBanner(
+                            errors = uiState.errors,
+                            onDismiss = { providerErrorsDismissed = true },
+                        )
                         Spacer(modifier = Modifier.height(8.dp))
                     }
 
@@ -208,7 +223,7 @@ private fun SearchInputBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 4.dp, end = 4.dp),
+                .padding(end = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             TextField(
@@ -219,6 +234,16 @@ private fun SearchInputBar(
                 singleLine = true,
                 leadingIcon = {
                     Icon(Icons.Default.Search, contentDescription = null)
+                },
+                trailingIcon = {
+                    if (query.isNotEmpty()) {
+                        IconButton(onClick = { onQueryChange("") }) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Clear query",
+                            )
+                        }
+                    }
                 },
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(onSearch = { onSearch() }),
@@ -239,13 +264,6 @@ private fun SearchInputBar(
                     } else {
                         MaterialTheme.colorScheme.onSurfaceVariant
                     },
-                )
-            }
-            IconButton(onClick = onSearch) {
-                Icon(
-                    imageVector = Icons.Default.Search,
-                    contentDescription = "Search",
-                    tint = MaterialTheme.colorScheme.primary,
                 )
             }
         }
@@ -364,24 +382,64 @@ private fun FilterChoice(
 }
 
 @Composable
-private fun ProviderErrorsBanner(errors: List<ProviderError>) {
+private fun ProviderErrorsBanner(
+    errors: List<ProviderError>,
+    onDismiss: () -> Unit,
+) {
     Surface(
-        color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.65f),
+        color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.75f),
         shape = GrabHubShapes.small,
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
-            Text(
-                text = "Some sources failed",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onErrorContainer,
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "Some sources failed",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    modifier = Modifier.weight(1f),
+                )
+                IconButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.padding(start = 4.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Dismiss source warnings",
+                        tint = MaterialTheme.colorScheme.onErrorContainer,
+                    )
+                }
+            }
             errors.forEach { error ->
                 Text(
-                    text = "${error.source.name}: ${error.message}",
+                    text = formatProviderErrorLine(error),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onErrorContainer,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
         }
+    }
+}
+
+private fun formatProviderErrorLine(error: ProviderError): String {
+    val source = error.source.name.lowercase().replaceFirstChar { it.uppercase() }
+    val message = error.message
+        .replace(Regex("https?://\\S+"), "")
+        .replace(Regex("\\s+"), " ")
+        .trim()
+        .trimEnd('.', ' ')
+    val hint = when (error.source) {
+        SourceType.THINGIVERSE -> "Configure an access token in app settings."
+        else -> message
+    }
+    return if (message.contains("access token", ignoreCase = true)) {
+        "$source: $hint"
+    } else {
+        "$source: $message"
     }
 }

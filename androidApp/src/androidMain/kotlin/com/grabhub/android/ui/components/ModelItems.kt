@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -21,14 +22,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
 import com.grabhub.android.ui.theme.GrabHubShapes
 import com.grabhub.domain.ModelItem
+import com.grabhub.domain.bestThumbnailUrl
 
 @Composable
 fun ModelListItem(
@@ -57,14 +57,12 @@ fun ModelListItem(
     ) {
         Row(
             modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment = Alignment.Top,
         ) {
-            AsyncImage(
-                model = item.imageUrl,
+            ModelThumbnail(
+                imageUrl = item.bestThumbnailUrl(),
                 contentDescription = item.title,
-                modifier = Modifier
-                    .size(88.dp)
-                    .clip(GrabHubShapes.small),
+                modifier = Modifier.size(88.dp),
                 contentScale = ContentScale.Crop,
             )
 
@@ -88,11 +86,9 @@ fun ModelListItem(
                     )
                 }
                 Spacer(modifier = Modifier.height(8.dp))
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    SourceBadge(source = item.source)
+                SourceBadge(source = item.source)
+                if (item.likes != null || item.downloads != null) {
+                    Spacer(modifier = Modifier.height(6.dp))
                     ModelStatsRow(item = item)
                 }
             }
@@ -116,7 +112,9 @@ fun ModelGridItem(
 
     Surface(
         onClick = onClick,
-        modifier = modifier.scale(scale),
+        modifier = modifier
+            .fillMaxWidth()
+            .scale(scale),
         shape = GrabHubShapes.medium,
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 1.dp,
@@ -124,33 +122,39 @@ fun ModelGridItem(
         interactionSource = interactionSource,
     ) {
         Column {
-            AsyncImage(
-                model = item.imageUrl,
+            ModelThumbnail(
+                imageUrl = item.bestThumbnailUrl(),
                 contentDescription = item.title,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(140.dp),
+                    .aspectRatio(4f / 3f),
                 contentScale = ContentScale.Crop,
             )
-            Column(modifier = Modifier.padding(12.dp)) {
-                Text(
-                    text = item.title,
-                    style = MaterialTheme.typography.titleSmall,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    minLines = 2,
-                )
-                item.author?.let { author ->
-                    Spacer(modifier = Modifier.height(4.dp))
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(112.dp)
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Column {
                     Text(
-                        text = author,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
+                        text = item.title,
+                        style = MaterialTheme.typography.titleSmall,
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                     )
+                    item.author?.let { author ->
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = author,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                 }
-                Spacer(modifier = Modifier.height(8.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -169,20 +173,32 @@ private fun ModelStatsRow(
     item: ModelItem,
     compact: Boolean = false,
 ) {
-    Row(horizontalArrangement = Arrangement.spacedBy(if (compact) 6.dp else 8.dp)) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(if (compact) 8.dp else 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         item.likes?.let { likes ->
             Text(
-                text = if (compact) "♥ $likes" else "♥ $likes likes",
+                text = if (compact) "♥ ${formatStatCount(likes)}" else "♥ ${formatStatCount(likes)} likes",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
             )
         }
         item.downloads?.let { downloads ->
             Text(
-                text = if (compact) "↓ $downloads" else "↓ $downloads",
+                text = "↓ ${formatStatCount(downloads)}",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
             )
         }
     }
+}
+
+private fun formatStatCount(value: Int): String = when {
+    value >= 1_000_000 -> "${value / 1_000_000}M"
+    value >= 10_000 -> "${value / 1_000}k"
+    value >= 1_000 -> String.format("%.1fk", value / 1_000f).removeSuffix(".0k") + "k"
+    else -> value.toString()
 }

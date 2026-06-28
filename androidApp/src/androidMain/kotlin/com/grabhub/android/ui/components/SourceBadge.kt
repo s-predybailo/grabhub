@@ -8,6 +8,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.grabhub.android.ui.theme.SourceCreality
 import com.grabhub.android.ui.theme.SourceMakerWorld
@@ -23,14 +24,15 @@ fun SourceBadge(
     val (label, tint) = sourceStyle(source)
     Surface(
         modifier = modifier,
-        color = tint.copy(alpha = 0.14f),
+        color = tint.copy(alpha = 0.18f),
         shape = RoundedCornerShape(999.dp),
     ) {
         Text(
             text = label,
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
             style = MaterialTheme.typography.labelSmall,
-            color = tint,
+            color = tint.copy(alpha = 0.95f),
+            maxLines = 1,
         )
     }
 }

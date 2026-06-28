@@ -53,7 +53,7 @@ fun ModelResultsLayout(
 
             ResultsViewMode.GRID -> {
                 LazyVerticalGrid(
-                    columns = GridCells.Adaptive(minSize = 168.dp),
+                    columns = GridCells.Adaptive(minSize = 172.dp),
                     contentPadding = contentPadding,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),

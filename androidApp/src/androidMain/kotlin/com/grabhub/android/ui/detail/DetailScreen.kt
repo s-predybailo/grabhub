@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -53,11 +54,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil3.compose.AsyncImage
+import coil3.compose.SubcomposeAsyncImage
 import com.grabhub.android.ui.components.GrabHubLoadingState
+import com.grabhub.android.ui.components.ModelImagePlaceholderIcon
 import com.grabhub.android.ui.components.SourceBadge
 import com.grabhub.android.ui.theme.GrabHubShapes
 import com.grabhub.domain.ModelDetail
+import com.grabhub.domain.carouselImages
 import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -165,14 +168,7 @@ private fun DetailContent(
     modifier: Modifier = Modifier,
 ) {
     val item = detail.item
-    val images = remember(item.imageUrl, detail.images) {
-        buildList {
-            item.imageUrl?.takeIf { it.isNotBlank() }?.let(::add)
-            detail.images.forEach { url ->
-                if (url.isNotBlank() && !contains(url)) add(url)
-            }
-        }
-    }
+    val images = detail.carouselImages()
 
     Column(
         modifier = modifier
@@ -265,11 +261,32 @@ private fun ImageCarousel(
                 state = pagerState,
                 modifier = Modifier.fillMaxSize(),
             ) { page ->
-                AsyncImage(
+                SubcomposeAsyncImage(
                     model = images[page],
                     contentDescription = "$title image ${page + 1}",
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop,
+                    loading = {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(28.dp),
+                                strokeWidth = 2.dp,
+                            )
+                        }
+                    },
+                    error = {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            ModelImagePlaceholderIcon()
+                        }
+                    },
                 )
             }
             Box(

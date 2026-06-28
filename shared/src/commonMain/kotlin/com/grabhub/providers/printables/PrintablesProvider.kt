@@ -6,6 +6,7 @@ import com.grabhub.domain.SearchPage
 import com.grabhub.domain.SearchQuery
 import com.grabhub.domain.SourceType
 import com.grabhub.providers.DetailProvider
+import com.grabhub.providers.printablesMediaUrl
 import com.grabhub.providers.SearchProvider
 import io.ktor.client.HttpClient
 import io.ktor.client.request.post
@@ -74,8 +75,8 @@ class PrintablesProvider(
             id = "printables:${print.id}",
             sourceId = print.id,
             title = print.name,
-            imageUrl = print.image?.filePath?.let { "$MEDIA_BASE/$it" },
-            previewUrl = print.image?.filePath?.let { "$MEDIA_BASE/$it" },
+            imageUrl = printablesMediaUrl(print.image?.filePath),
+            previewUrl = printablesMediaUrl(print.images?.getOrNull(1)?.filePath ?: print.image?.filePath),
             author = print.user?.publicUsername ?: print.user?.handle,
             source = SourceType.PRINTABLES,
             modelUrl = "https://www.printables.com/model/${print.id}-${print.slug}",
@@ -86,24 +87,28 @@ class PrintablesProvider(
             price = print.price,
         )
 
+        val galleryImages = print.images.orEmpty()
+            .mapNotNull { printablesMediaUrl(it.filePath) }
+
         return ModelDetail(
             item = item,
             description = print.description,
-            images = listOfNotNull(item.imageUrl),
+            images = galleryImages.ifEmpty { listOfNotNull(item.imageUrl) },
             license = print.license,
         )
     }
 
     private fun PrintItem.toModelItem(): ModelItem {
         val modelUrl = "https://www.printables.com/model/$id-$slug"
-        val imageUrl = image?.filePath?.let { "$MEDIA_BASE/$it" }
+        val imageUrl = printablesMediaUrl(image?.filePath)
+        val previewUrl = printablesMediaUrl(image?.filePath)
 
         return ModelItem(
             id = "printables:$id",
             sourceId = id,
             title = name,
             imageUrl = imageUrl,
-            previewUrl = imageUrl,
+            previewUrl = previewUrl,
             author = user?.publicUsername ?: user?.handle,
             source = SourceType.PRINTABLES,
             modelUrl = modelUrl,
@@ -209,6 +214,7 @@ class PrintablesProvider(
         val license: String? = null,
         val user: PrintUser? = null,
         val image: PrintImage? = null,
+        val images: List<PrintImage>? = null,
         val tags: List<PrintTag>? = null,
     )
 
@@ -249,6 +255,7 @@ class PrintablesProvider(
                 license
                 user { publicUsername handle }
                 image { filePath }
+                images { filePath }
                 tags { name }
               }
             }
