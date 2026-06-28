@@ -51,6 +51,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.grabhub.android.BuildConfig
 import com.grabhub.android.ui.components.GrabHubEmptyState
 import com.grabhub.android.ui.components.GrabHubLoadingState
 import com.grabhub.android.ui.components.ModelResultsLayout
@@ -87,7 +88,7 @@ fun SearchScreen(
                     Column {
                         Text("GrabHub")
                         Text(
-                            text = "Search 3D models across sources",
+                            text = "Search 3D models across sources · v${BuildConfig.VERSION_NAME}",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )

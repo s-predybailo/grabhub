@@ -5,23 +5,24 @@ import android.net.Uri
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -41,6 +42,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -156,40 +158,31 @@ fun DetailScreen(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 @Composable
 private fun DetailContent(
     detail: ModelDetail,
     modifier: Modifier = Modifier,
 ) {
     val item = detail.item
+    val images = remember(item.imageUrl, detail.images) {
+        buildList {
+            item.imageUrl?.takeIf { it.isNotBlank() }?.let(::add)
+            detail.images.forEach { url ->
+                if (url.isNotBlank() && !contains(url)) add(url)
+            }
+        }
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(280.dp),
-        ) {
-            AsyncImage(
-                model = item.imageUrl,
-                contentDescription = item.title,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop,
-            )
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(Color.Transparent, MaterialTheme.colorScheme.surface),
-                            startY = 120f,
-                        ),
-                    ),
-            )
-        }
+        ImageCarousel(
+            images = images,
+            title = item.title,
+        )
 
         Column(
             modifier = Modifier
@@ -245,25 +238,86 @@ private fun DetailContent(
                 Text("Description", style = MaterialTheme.typography.titleMedium)
                 Text(description, style = MaterialTheme.typography.bodyMedium)
             }
+        }
+    }
+}
 
-            if (detail.images.size > 1) {
-                Text("Gallery", style = MaterialTheme.typography.titleMedium)
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    contentPadding = PaddingValues(vertical = 4.dp),
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun ImageCarousel(
+    images: List<String>,
+    title: String,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(300.dp),
+    ) {
+        if (images.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+            )
+        } else {
+            val pagerState = rememberPagerState(pageCount = { images.size })
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize(),
+            ) { page ->
+                AsyncImage(
+                    model = images[page],
+                    contentDescription = "$title image ${page + 1}",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(Color.Transparent, MaterialTheme.colorScheme.surface),
+                            startY = 140f,
+                        ),
+                    ),
+            )
+            if (images.size > 1) {
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
-                    items(detail.images.drop(1)) { imageUrl ->
-                        AsyncImage(
-                            model = imageUrl,
-                            contentDescription = null,
+                    repeat(images.size) { index ->
+                        val selected = pagerState.currentPage == index
+                        Box(
                             modifier = Modifier
-                                .width(220.dp)
-                                .height(140.dp)
-                                .clip(GrabHubShapes.medium),
-                            contentScale = ContentScale.Crop,
+                                .size(if (selected) 9.dp else 7.dp)
+                                .background(
+                                    color = if (selected) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.35f)
+                                    },
+                                    shape = CircleShape,
+                                ),
                         )
                     }
                 }
+                Text(
+                    text = "${pagerState.currentPage + 1} / ${images.size}",
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(12.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.72f),
+                            shape = GrabHubShapes.small,
+                        )
+                        .padding(horizontal = 10.dp, vertical = 4.dp),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
             }
         }
     }
