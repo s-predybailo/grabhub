@@ -1,7 +1,5 @@
 package com.grabhub.android.ui.search
 
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -37,7 +35,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -49,10 +46,10 @@ import org.koin.androidx.compose.koinViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(
+    onModelClick: (String) -> Unit,
     viewModel: SearchViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val context = LocalContext.current
 
     Scaffold(
         topBar = {
@@ -121,11 +118,7 @@ fun SearchScreen(
                         items(uiState.results, key = { it.id }) { item ->
                             ModelItemCard(
                                 item = item,
-                                onClick = {
-                                    context.startActivity(
-                                        Intent(Intent.ACTION_VIEW, Uri.parse(item.modelUrl)),
-                                    )
-                                },
+                                onClick = { onModelClick(item.id) },
                             )
                         }
                     }
