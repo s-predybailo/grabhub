@@ -22,6 +22,20 @@ Cross-platform 3D model search aggregator built with Kotlin Multiplatform.
 - Improved deduplication (normalized title + author)
 - Android detail screen with navigation
 
+## Phase 3
+
+- Search filters: free / paid, popularity sort, license (commercial / non-commercial)
+- Favorites (SQLDelight, toggle on detail screen)
+- Search history (last 50 queries, tap to re-run)
+- Bottom navigation: Search, Favorites, History
+
+## Releases
+
+| Tag | Contents |
+|-----|----------|
+| v0.1.0 | Phase 1 MVP |
+| v0.3.0 | Phase 2 + Phase 3 (4 providers, cache, detail, filters, favorites, history) |
+
 ## Gitflow
 
 | Branch | Purpose |
