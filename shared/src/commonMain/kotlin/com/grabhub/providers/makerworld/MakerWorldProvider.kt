@@ -1,5 +1,6 @@
 package com.grabhub.providers.makerworld
 
+import com.grabhub.domain.FeedType
 import com.grabhub.domain.ModelDetail
 import com.grabhub.domain.ModelItem
 import com.grabhub.domain.SearchPage
@@ -32,7 +33,7 @@ class MakerWorldProvider(
     override suspend fun search(query: SearchQuery): SearchPage {
         val offset = (query.page - 1) * query.pageSize
         val responseText = httpClient.get("$API_BASE/v1/search-service/select/design2") {
-            parameter("keyword", query.text)
+            parameter("keyword", browseKeyword(query))
             parameter("limit", query.pageSize)
             parameter("offset", offset)
         }.bodyAsText()
@@ -75,13 +76,7 @@ class MakerWorldProvider(
                 add(picture.url)
             }
         }
-        val fromInstances = design.instances.orEmpty().flatMap { instance ->
-            buildList {
-                add(instance.cover)
-                instance.pictures.orEmpty().forEach { picture -> add(picture.url) }
-            }
-        }
-        return mergeImageUrls(fromDesign, fromInstances)
+        return mergeImageUrls(fromDesign)
     }
 
     private fun MakerWorldHit.toModelItem(): ModelItem {
@@ -227,5 +222,8 @@ class MakerWorldProvider(
 
     companion object {
         private const val API_BASE = "https://api.bambulab.com"
+
+        private fun browseKeyword(query: SearchQuery): String =
+            if (query.feedType != null) "" else query.text
     }
 }

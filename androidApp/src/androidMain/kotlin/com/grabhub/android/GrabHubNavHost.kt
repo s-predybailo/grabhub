@@ -23,9 +23,11 @@ import com.grabhub.android.ui.components.GrabHubFloatingNavBar
 import com.grabhub.android.ui.detail.DetailScreen
 import com.grabhub.android.ui.favorites.FavoritesScreen
 import com.grabhub.android.ui.history.HistoryScreen
+import com.grabhub.android.ui.feed.FeedScreen
 import com.grabhub.android.ui.home.HomeScreen
 import com.grabhub.android.ui.search.SearchScreen
 import com.grabhub.android.ui.settings.SettingsScreen
+import com.grabhub.domain.FeedType
 import com.grabhub.domain.SortOrder
 import java.net.URLDecoder
 import java.net.URLEncoder
@@ -38,9 +40,12 @@ private object Routes {
     const val FAVORITES = "favorites"
     const val HISTORY = "history"
     const val SETTINGS = "settings"
+    const val FEED = "feed/{feedType}"
     const val DETAIL = "detail/{modelId}"
     const val NONE = "_none_"
     const val SORT_DEFAULT = "_default_"
+
+    fun feedDestination(feedType: FeedType): String = "feed/${feedType.name.lowercase()}"
 
     fun searchDestination(prefill: String = NONE, sortOrder: String = SORT_DEFAULT): String =
         "search/$prefill/$sortOrder"
@@ -52,6 +57,7 @@ fun GrabHubNavHost() {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
     val showBottomBar = currentRoute == Routes.HOME ||
+        currentRoute?.startsWith("feed/") == true ||
         currentRoute?.startsWith("search/") == true ||
         currentRoute == Routes.FAVORITES ||
         currentRoute == Routes.HISTORY ||
@@ -86,11 +92,26 @@ fun GrabHubNavHost() {
                             onModelClick = { modelId ->
                                 navController.navigate(detailRoute(modelId))
                             },
-                            onSearchShortcut = { query, sortOrder ->
-                                navigateToSearch(navController, query, sortOrder)
+                            onOpenFeed = { feedType ->
+                                navController.navigate(Routes.feedDestination(feedType))
                             },
                             onOpenHistory = {
                                 navigateToTab(navController, GrabHubSideNavItem("history"))
+                            },
+                        )
+                    }
+                    composable(
+                        route = Routes.FEED,
+                        arguments = listOf(
+                            navArgument("feedType") { type = NavType.StringType },
+                        ),
+                    ) { entry ->
+                        val feedType = parseFeedType(entry.arguments?.getString("feedType"))
+                        FeedScreen(
+                            feedType = feedType,
+                            onBack = { navController.popBackStack() },
+                            onModelClick = { modelId ->
+                                navController.navigate(detailRoute(modelId))
                             },
                         )
                     }
@@ -239,6 +260,10 @@ private fun navigateToSearch(
         launchSingleTop = true
     }
 }
+
+private fun parseFeedType(raw: String?): FeedType = runCatching {
+    FeedType.valueOf(raw.orEmpty().uppercase())
+}.getOrDefault(FeedType.DISCOVER)
 
 private fun parseSortOrder(raw: String?): SortOrder? = when (raw) {
     "popularity" -> SortOrder.POPULARITY

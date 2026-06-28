@@ -1,6 +1,7 @@
 package com.grabhub.android.di
 
 import com.grabhub.android.ui.detail.DetailViewModel
+import com.grabhub.android.ui.feed.FeedViewModel
 import com.grabhub.android.ui.home.HomeViewModel
 import com.grabhub.android.ui.preferences.UiPreferences
 import com.grabhub.android.ui.favorites.FavoritesViewModel
@@ -15,6 +16,7 @@ val androidModule = module {
     single { UiPreferences(androidContext()) }
     viewModel { SearchViewModel(get(), get()) }
     viewModel { HomeViewModel(get(), get()) }
+    viewModel { FeedViewModel(get(), get()) }
     viewModel { DetailViewModel(get(), get()) }
     viewModel { FavoritesViewModel(get()) }
     viewModel { HistoryViewModel(get()) }

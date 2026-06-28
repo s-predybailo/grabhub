@@ -1,4 +1,4 @@
-package com.grabhub.android.ui.home
+package com.grabhub.android.ui.feed
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -13,30 +13,27 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-data class HomeUiState(
+data class FeedUiState(
+    val feedType: FeedType = FeedType.DISCOVER,
     val isLoading: Boolean = true,
-    val feedItems: List<ModelItem> = emptyList(),
+    val items: List<ModelItem> = emptyList(),
     val error: String? = null,
 )
 
-class HomeViewModel(
+class FeedViewModel(
     private val searchRepository: SearchRepository,
     private val uiPreferences: UiPreferences,
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(HomeUiState())
-    val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
+    private val _uiState = MutableStateFlow(FeedUiState())
+    val uiState: StateFlow<FeedUiState> = _uiState.asStateFlow()
 
-    init {
-        loadFeed()
-    }
-
-    fun loadFeed() {
+    fun load(feedType: FeedType) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
+            _uiState.update { it.copy(feedType = feedType, isLoading = true, error = null) }
             runCatching {
                 searchRepository.loadFeed(
-                    feedType = FeedType.DISCOVER,
+                    feedType = feedType,
                     filters = SearchFilters(
                         enabledSources = uiPreferences.getEnabledSources().toList(),
                     ),
@@ -45,7 +42,7 @@ class HomeViewModel(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        feedItems = result.items,
+                        items = result.items,
                         error = if (result.items.isEmpty()) "empty" else null,
                     )
                 }
@@ -53,7 +50,7 @@ class HomeViewModel(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        feedItems = emptyList(),
+                        items = emptyList(),
                         error = error.message ?: "failed",
                     )
                 }

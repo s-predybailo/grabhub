@@ -1,17 +1,31 @@
 package com.grabhub.engine
 
+import com.grabhub.domain.FeedType
 import com.grabhub.domain.LicenseFilter
 import com.grabhub.domain.ModelItem
 import com.grabhub.domain.PriceFilter
 import com.grabhub.domain.SearchFilters
+import com.grabhub.domain.SearchQuery
 import com.grabhub.domain.SortOrder
 import com.grabhub.domain.SourceType
 
 object SearchResultProcessor {
 
-    fun process(items: List<ModelItem>, query: String, filters: SearchFilters): List<ModelItem> {
-        val deduped = ResultDeduplicator.deduplicateAndSort(items, query, filters.sortOrder)
-        return applyFilters(deduped, filters)
+    fun process(items: List<ModelItem>, query: SearchQuery): List<ModelItem> {
+        val deduped = when (query.feedType) {
+            FeedType.LATEST, FeedType.TRENDING -> ResultDeduplicator.deduplicatePreserveOrder(items)
+            FeedType.POPULAR, FeedType.DISCOVER -> ResultDeduplicator.deduplicateAndSort(
+                items = items,
+                query = query.text,
+                sortOrder = SortOrder.POPULARITY,
+            )
+            null -> ResultDeduplicator.deduplicateAndSort(
+                items = items,
+                query = query.text,
+                sortOrder = query.filters.sortOrder,
+            )
+        }
+        return applyFilters(deduped, query.filters)
     }
 
     fun applyFilters(items: List<ModelItem>, filters: SearchFilters): List<ModelItem> =

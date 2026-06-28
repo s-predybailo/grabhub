@@ -116,6 +116,15 @@
     <string name="home_feed_error_subtitle">Проверьте подключение и попробуйте снова</string>
     <string name="home_feed_retry">Повторить</string>
 
+    <!-- Feeds -->
+    <string name="feed_trending_title">В тренде сегодня</string>
+    <string name="feed_trending_subtitle">Недавние популярные модели со всех площадок</string>
+    <string name="feed_popular_title">Популярное</string>
+    <string name="feed_popular_subtitle">Самые залайканные и скачиваемые модели</string>
+    <string name="feed_latest_title">Новинки</string>
+    <string name="feed_latest_subtitle">Свежие загрузки со всех платформ</string>
+    <string name="feed_discover_subtitle">Подборка популярных моделей для старта</string>
+
     <!-- Common -->
     <string name="loading">Загрузка…</string>
 </resources>

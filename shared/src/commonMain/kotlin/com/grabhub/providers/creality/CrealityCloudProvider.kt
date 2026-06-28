@@ -1,5 +1,6 @@
 package com.grabhub.providers.creality
 
+import com.grabhub.domain.FeedType
 import com.grabhub.domain.ModelDetail
 import com.grabhub.domain.ModelItem
 import com.grabhub.domain.SearchPage
@@ -36,7 +37,7 @@ class CrealityCloudProvider(
             body = SearchRequest(
                 page = query.page,
                 pageSize = query.pageSize,
-                keyword = query.text,
+                keyword = if (query.feedType != null) "" else query.text,
             ),
         )
 

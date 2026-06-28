@@ -45,13 +45,13 @@ import com.grabhub.android.ui.theme.Emerald400
 import com.grabhub.android.ui.theme.GrabHubShapes
 import com.grabhub.android.ui.theme.Rose400
 import com.grabhub.android.ui.theme.Violet400
-import com.grabhub.domain.SortOrder
+import com.grabhub.domain.FeedType
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun HomeScreen(
     onModelClick: (String) -> Unit,
-    onSearchShortcut: (query: String, sortOrder: SortOrder) -> Unit,
+    onOpenFeed: (FeedType) -> Unit,
     onOpenHistory: () -> Unit,
     viewModel: HomeViewModel = koinViewModel(),
 ) {
@@ -66,8 +66,9 @@ fun HomeScreen(
         Spacer(modifier = Modifier.height(12.dp))
 
         HomeShortcuts(
-            onPopular = { onSearchShortcut(HomeViewModel.SHORTCUT_POPULAR_QUERY, SortOrder.POPULARITY) },
-            onLatest = { onSearchShortcut(HomeViewModel.SHORTCUT_LATEST_QUERY, SortOrder.RELEVANCE) },
+            onPopular = { onOpenFeed(FeedType.POPULAR) },
+            onLatest = { onOpenFeed(FeedType.LATEST) },
+            onTrending = { onOpenFeed(FeedType.TRENDING) },
             onHistory = onOpenHistory,
         )
 
@@ -166,6 +167,7 @@ private fun HomeHeader() {
 private fun HomeShortcuts(
     onPopular: () -> Unit,
     onLatest: () -> Unit,
+    onTrending: () -> Unit,
     onHistory: () -> Unit,
 ) {
     Column(
@@ -199,7 +201,7 @@ private fun HomeShortcuts(
                 label = stringResource(R.string.home_shortcut_trending),
                 icon = Icons.Default.Whatshot,
                 tint = Rose400,
-                onClick = onPopular,
+                onClick = onTrending,
                 modifier = Modifier.weight(1f),
             )
             HomeShortcutCard(

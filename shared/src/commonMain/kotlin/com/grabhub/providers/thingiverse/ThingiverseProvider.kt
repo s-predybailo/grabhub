@@ -1,5 +1,6 @@
 package com.grabhub.providers.thingiverse
 
+import com.grabhub.domain.FeedType
 import com.grabhub.domain.ModelDetail
 import com.grabhub.domain.ModelItem
 import com.grabhub.domain.SearchPage
@@ -37,20 +38,39 @@ class ThingiverseProvider(
             )
         }
 
-        val responseText = httpClient.get("${API_BASE}/search/${query.text}") {
-            parameter("access_token", accessToken)
-            parameter("page", query.page)
-            parameter("per_page", query.pageSize)
-        }.bodyAsText()
+        val responseText = when (query.feedType) {
+            FeedType.LATEST, FeedType.TRENDING -> httpClient.get("$API_BASE/newest") {
+                parameter("access_token", accessToken)
+                parameter("page", query.page)
+                parameter("per_page", query.pageSize)
+            }.bodyAsText()
 
-        val response = json.decodeFromString<ThingiverseSearchResponse>(responseText)
-        val hits = response.hits.orEmpty()
+            FeedType.POPULAR, FeedType.DISCOVER -> httpClient.get("$API_BASE/popular") {
+                parameter("access_token", accessToken)
+                parameter("page", query.page)
+                parameter("per_page", query.pageSize)
+            }.bodyAsText()
+
+            null -> httpClient.get("${API_BASE}/search/${query.text}") {
+                parameter("access_token", accessToken)
+                parameter("page", query.page)
+                parameter("per_page", query.pageSize)
+            }.bodyAsText()
+        }
+
+        val items = when (query.feedType) {
+            null -> json.decodeFromString<ThingiverseSearchResponse>(responseText).hits.orEmpty()
+                .map { it.toModelItem() }
+
+            else -> json.decodeFromString<List<ThingiverseThing>>(responseText)
+                .map { it.toModelItem() }
+        }
 
         return SearchPage(
-            items = hits.map { it.toModelItem() },
+            items = items,
             page = query.page,
             pageSize = query.pageSize,
-            hasMore = hits.size >= query.pageSize,
+            hasMore = items.size >= query.pageSize,
         )
     }
 
@@ -86,14 +106,21 @@ class ThingiverseProvider(
                 parameter("access_token", accessToken)
             }.bodyAsText()
             json.decodeFromString<List<ThingiverseImageEntry>>(responseText)
-                .flatMap { entry ->
-                    val sized = entry.sizes.orEmpty()
-                        .sortedByDescending { it.type == "display" || it.type == "large" }
-                        .mapNotNull { normalizeImageUrl(it.url) }
-                    sized.ifEmpty { listOfNotNull(normalizeImageUrl(entry.url)) }
-                }
+                .mapNotNull { entry -> bestImageUrl(entry) }
                 .distinct()
         }.getOrDefault(emptyList())
+    }
+
+    private fun bestImageUrl(entry: ThingiverseImageEntry): String? {
+        val sized = entry.sizes.orEmpty()
+        val preferred = listOf("display", "large", "preview", "medium", "thumb")
+        for (type in preferred) {
+            val match = sized.firstOrNull { it.type == type }?.url
+            if (!match.isNullOrBlank()) {
+                return normalizeImageUrl(match)
+            }
+        }
+        return normalizeImageUrl(entry.url)
     }
 
     private fun ThingiverseHit.toModelItem(): ModelItem {

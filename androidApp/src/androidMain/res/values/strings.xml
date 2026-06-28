@@ -116,6 +116,15 @@
     <string name="home_feed_error_subtitle">Check your connection and try again</string>
     <string name="home_feed_retry">Retry</string>
 
+    <!-- Feeds -->
+    <string name="feed_trending_title">Trending today</string>
+    <string name="feed_trending_subtitle">Recent popular models from all sources</string>
+    <string name="feed_popular_title">Popular</string>
+    <string name="feed_popular_subtitle">Most liked and downloaded models</string>
+    <string name="feed_latest_title">Latest</string>
+    <string name="feed_latest_subtitle">Newest uploads across platforms</string>
+    <string name="feed_discover_subtitle">Hand-picked popular models to explore</string>
+
     <!-- Common -->
     <string name="loading">Loading…</string>
 </resources>

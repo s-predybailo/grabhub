@@ -37,4 +37,14 @@ class ImageUrlsTest {
             ),
         )
     }
+
+    @Test
+    fun mergeImageUrls_deduplicatesThingiverseResizeVariants() {
+        val resized = "https://resize.thingiverse.com/?url=https%3A%2F%2Fcdn.thingiverse.com%2Fassets%2Fa.png&w=1024"
+        val direct = "https://cdn.thingiverse.com/assets/a.png"
+        assertEquals(
+            listOf(resized),
+            mergeImageUrls(listOf(resized, direct)),
+        )
+    }
 }

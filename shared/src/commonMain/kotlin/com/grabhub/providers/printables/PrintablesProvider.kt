@@ -1,5 +1,6 @@
 package com.grabhub.providers.printables
 
+import com.grabhub.domain.FeedType
 import com.grabhub.domain.ModelDetail
 import com.grabhub.domain.ModelItem
 import com.grabhub.domain.SearchPage
@@ -38,9 +39,9 @@ class PrintablesProvider(
                     operationName = "SearchModels",
                     query = SEARCH_QUERY,
                     variables = SearchVariables(
-                        query = query.text,
+                        query = browseQuery(query),
                         limit = query.pageSize,
-                        ordering = "best_match",
+                        ordering = printablesOrdering(query.feedType),
                     ),
                 ),
             )
@@ -227,6 +228,16 @@ class PrintablesProvider(
     companion object {
         private const val GRAPHQL_URL = "https://api.printables.com/graphql/"
         private const val MEDIA_BASE = "https://media.printables.com"
+        private const val BROWSE_QUERY = "*"
+
+        private fun browseQuery(query: SearchQuery): String =
+            if (query.feedType != null) BROWSE_QUERY else query.text
+
+        private fun printablesOrdering(feedType: FeedType?): String = when (feedType) {
+            FeedType.LATEST, FeedType.TRENDING -> "latest"
+            FeedType.POPULAR, FeedType.DISCOVER -> "popular"
+            null -> "best_match"
+        }
 
         private const val SEARCH_QUERY = """
             query SearchModels(${'$'}query: String!, ${'$'}limit: Int, ${'$'}ordering: SearchChoicesEnum) {

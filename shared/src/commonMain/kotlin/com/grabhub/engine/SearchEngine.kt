@@ -46,7 +46,7 @@ class SearchEngine(
             .flatMap { it.items }
 
         SearchResult(
-            items = SearchResultProcessor.process(allItems, query.text, query.filters),
+            items = SearchResultProcessor.process(allItems, query),
             errors = errors,
         )
     }
