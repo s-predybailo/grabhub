@@ -26,6 +26,13 @@ internal object ResultDeduplicator {
             }
     }
 
+    fun deduplicatePreserveOrder(items: List<ModelItem>): List<ModelItem> {
+        val seen = mutableSetOf<String>()
+        return items.filter { item ->
+            seen.add(dedupKey(item))
+        }
+    }
+
     private fun popularityScore(item: ModelItem): Int =
         (item.downloads ?: 0) + (item.likes ?: 0) * 10
 

@@ -52,6 +52,32 @@ class SearchEngineTest {
         assertEquals(SourceType.THINGIVERSE, result.errors.first().source)
     }
 
+    @Test
+    fun skipsDisabledProviders() = runTest {
+        val printables = FakeProvider(
+            source = SourceType.PRINTABLES,
+            items = listOf(model("printables:1", "Benchy", SourceType.PRINTABLES)),
+        )
+        val thingiverse = FakeProvider(
+            source = SourceType.THINGIVERSE,
+            items = listOf(model("thingiverse:2", "Benchy Remix", SourceType.THINGIVERSE)),
+        )
+
+        val engine = SearchEngine(listOf(printables, thingiverse))
+        val result = engine.search(
+            SearchQuery(
+                text = "benchy",
+                filters = com.grabhub.domain.SearchFilters(
+                    enabledSources = listOf(SourceType.PRINTABLES),
+                ),
+            ),
+        )
+
+        assertEquals(1, result.items.size)
+        assertEquals(SourceType.PRINTABLES, result.items.first().source)
+        assertTrue(result.errors.isEmpty())
+    }
+
     private fun model(
         id: String,
         title: String,

@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.kotlinMultiplatform)
@@ -27,13 +29,14 @@ kotlin {
             implementation(libs.koin.compose)
             implementation(libs.koin.androidx.compose)
             implementation(libs.androidx.navigation.compose)
-            implementation(libs.androidx.compose.material.icons.extended)
+            implementation(libs.compose.material.icons.extended)
             implementation(libs.coil.compose)
             implementation(libs.coil.network.ktor)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
             implementation(compose.foundation)
+            implementation(compose.animation)
             implementation(compose.material3)
             implementation(compose.ui)
             implementation(compose.components.resources)
@@ -53,10 +56,11 @@ android {
         applicationId = "com.grabhub.android"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 16
+        versionName = "0.7.9"
 
         val thingiverseToken = project.findProperty("THINGIVERSE_ACCESS_TOKEN") as String?
+            ?: readLocalProperty("THINGIVERSE_ACCESS_TOKEN")
             ?: System.getenv("THINGIVERSE_ACCESS_TOKEN")
             ?: ""
         buildConfigField("String", "THINGIVERSE_ACCESS_TOKEN", "\"$thingiverseToken\"")
@@ -81,4 +85,10 @@ android {
 
 dependencies {
     debugImplementation(compose.uiTooling)
+}
+
+private fun readLocalProperty(key: String): String? {
+    val file = rootProject.file("local.properties")
+    if (!file.exists()) return null
+    return Properties().apply { file.inputStream().use(::load) }.getProperty(key)
 }

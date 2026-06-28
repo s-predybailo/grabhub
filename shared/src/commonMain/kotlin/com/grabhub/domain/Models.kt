@@ -34,6 +34,7 @@ data class SearchQuery(
     val page: Int = 1,
     val pageSize: Int = 20,
     val filters: SearchFilters = SearchFilters(),
+    val feedType: FeedType? = null,
 )
 
 @Serializable

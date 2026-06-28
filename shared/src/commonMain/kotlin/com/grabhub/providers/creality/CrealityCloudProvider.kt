@@ -1,5 +1,6 @@
 package com.grabhub.providers.creality
 
+import com.grabhub.domain.FeedType
 import com.grabhub.domain.ModelDetail
 import com.grabhub.domain.ModelItem
 import com.grabhub.domain.SearchPage
@@ -7,6 +8,8 @@ import com.grabhub.domain.SearchQuery
 import com.grabhub.domain.SourceType
 import com.grabhub.providers.DetailProvider
 import com.grabhub.providers.SearchProvider
+import com.grabhub.providers.mergeImageUrls
+import com.grabhub.providers.normalizeImageUrl
 import io.ktor.client.HttpClient
 import io.ktor.client.request.headers
 import io.ktor.client.request.post
@@ -34,7 +37,7 @@ class CrealityCloudProvider(
             body = SearchRequest(
                 page = query.page,
                 pageSize = query.pageSize,
-                keyword = query.text,
+                keyword = if (query.feedType != null) "" else query.text,
             ),
         )
 
@@ -59,7 +62,13 @@ class CrealityCloudProvider(
         if (files.isEmpty()) return null
 
         val firstFile = files.first()
-        val images = files.mapNotNull { it.coverUrl ?: it.cover?.url }.distinct()
+        val images = files.flatMap { file ->
+            listOfNotNull(
+                normalizeImageUrl(file.coverUrl),
+                normalizeImageUrl(file.cover?.url),
+                normalizeImageUrl(file.cover?.originUrl),
+            )
+        }.distinct()
         val item = ModelItem(
             id = "creality:$sourceId",
             sourceId = sourceId,
@@ -95,8 +104,10 @@ class CrealityCloudProvider(
     }
 
     private fun CrealityModelGroup.toModelItem(): ModelItem {
-        val imageUrl = covers?.firstOrNull()?.url
-        val images = covers.orEmpty().mapNotNull { it.url }
+        val imageUrl = normalizeImageUrl(covers?.firstOrNull()?.url)
+        val images = covers.orEmpty().mapNotNull { normalizeImageUrl(it.url) }
+        val originImages = covers.orEmpty().mapNotNull { normalizeImageUrl(it.originUrl) }
+        val allImages = mergeImageUrls(images, originImages)
 
         return ModelItem(
             id = "creality:$id",
@@ -113,7 +124,7 @@ class CrealityCloudProvider(
             isFree = isPay != true,
             price = price?.takeIf { it > 0.0 },
         ).let { item ->
-            if (images.size > 1) item.copy(previewUrl = images.getOrNull(1)) else item
+            if (allImages.size > 1) item.copy(previewUrl = allImages.getOrNull(1)) else item
         }
     }
 
@@ -159,6 +170,7 @@ class CrealityCloudProvider(
     @Serializable
     private data class CrealityCover(
         val url: String? = null,
+        val originUrl: String? = null,
     )
 
     @Serializable

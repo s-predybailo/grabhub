@@ -1,20 +1,44 @@
 package com.grabhub.engine
 
+import com.grabhub.domain.FeedType
 import com.grabhub.domain.LicenseFilter
 import com.grabhub.domain.ModelItem
 import com.grabhub.domain.PriceFilter
 import com.grabhub.domain.SearchFilters
+import com.grabhub.domain.SearchQuery
 import com.grabhub.domain.SortOrder
+import com.grabhub.domain.SourceType
 
 object SearchResultProcessor {
 
-    fun process(items: List<ModelItem>, query: String, filters: SearchFilters): List<ModelItem> {
-        val deduped = ResultDeduplicator.deduplicateAndSort(items, query, filters.sortOrder)
-        return applyFilters(deduped, filters)
+    fun process(items: List<ModelItem>, query: SearchQuery): List<ModelItem> {
+        val deduped = when (query.feedType) {
+            FeedType.LATEST, FeedType.TRENDING -> ResultDeduplicator.deduplicatePreserveOrder(items)
+            FeedType.POPULAR, FeedType.DISCOVER -> ResultDeduplicator.deduplicateAndSort(
+                items = items,
+                query = query.text,
+                sortOrder = SortOrder.POPULARITY,
+            )
+            null -> ResultDeduplicator.deduplicateAndSort(
+                items = items,
+                query = query.text,
+                sortOrder = query.filters.sortOrder,
+            )
+        }
+        return applyFilters(deduped, query.filters)
     }
 
     fun applyFilters(items: List<ModelItem>, filters: SearchFilters): List<ModelItem> =
-        items.filter { item -> matchesPrice(item, filters.priceFilter) && matchesLicense(item, filters.licenseFilter) }
+        items.filter { item ->
+            matchesSource(item, filters.enabledSources) &&
+                matchesPrice(item, filters.priceFilter) &&
+                matchesLicense(item, filters.licenseFilter)
+        }
+
+    private fun matchesSource(item: ModelItem, enabledSources: List<SourceType>): Boolean {
+        if (enabledSources.isEmpty()) return true
+        return item.source in enabledSources
+    }
 
     private fun matchesPrice(item: ModelItem, filter: PriceFilter): Boolean = when (filter) {
         PriceFilter.ALL -> true

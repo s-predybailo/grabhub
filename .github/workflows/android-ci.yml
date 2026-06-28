@@ -1,0 +1,81 @@
+name: Android CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+concurrency:
+  group: android-ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: platforms;android-35 build-tools;35.0.0
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Run shared unit tests
+        run: ./gradlew :shared:jvmTest --no-daemon
+
+      - name: Build debug APK
+        run: ./gradlew :androidApp:assembleDebug --no-daemon
+        env:
+          THINGIVERSE_ACCESS_TOKEN: ${{ secrets.THINGIVERSE_ACCESS_TOKEN }}
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: grabhub-debug-apk
+          path: androidApp/build/outputs/apk/debug/*.apk
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Note where to download the APK
+        run: |
+          {
+            echo "### Debug APK ready"
+            echo "Download artifact **grabhub-debug-apk** in the **Artifacts** section at the bottom of this workflow run page."
+            echo "Unzip and install: \`adb install androidApp-debug.apk\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publish debug APK to GitHub Release
+        if: github.event_name != 'pull_request'
+        uses: ncipollo/release-action@v1
+        with:
+          allowUpdates: true
+          replacesArtifacts: true
+          artifactErrorsFailBuild: true
+          artifacts: androidApp/build/outputs/apk/debug/*.apk
+          artifactContentType: application/vnd.android.package-archive
+          body: |
+            Automated debug build from `${{ github.sha }}` on `${{ github.ref_name }}`.
+
+            Install: download `androidApp-debug.apk` and run `adb install -r androidApp-debug.apk`.
+          commit: ${{ github.sha }}
+          name: Debug APK (${{ github.sha }})
+          makeLatest: false
+          omitBodyDuringUpdate: true
+          prerelease: true
+          tag: debug-latest
+          token: ${{ secrets.GITHUB_TOKEN }}

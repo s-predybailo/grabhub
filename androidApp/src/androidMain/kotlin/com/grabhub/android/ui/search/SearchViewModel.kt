@@ -2,6 +2,7 @@ package com.grabhub.android.ui.search
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.grabhub.android.ui.preferences.UiPreferences
 import com.grabhub.data.SearchRepository
 import com.grabhub.domain.LicenseFilter
 import com.grabhub.domain.ModelItem
@@ -10,6 +11,7 @@ import com.grabhub.domain.ProviderError
 import com.grabhub.domain.SearchFilters
 import com.grabhub.domain.SearchQuery
 import com.grabhub.domain.SortOrder
+import com.grabhub.domain.SourceType
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -28,9 +30,16 @@ data class SearchUiState(
 
 class SearchViewModel(
     private val searchRepository: SearchRepository,
+    private val uiPreferences: UiPreferences,
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(SearchUiState())
+    private val _uiState = MutableStateFlow(
+        SearchUiState(
+            filters = SearchUiState().filters.copy(
+                enabledSources = uiPreferences.getEnabledSources().toList(),
+            ),
+        ),
+    )
     val uiState: StateFlow<SearchUiState> = _uiState.asStateFlow()
 
     fun onQueryChange(query: String) {
@@ -47,6 +56,19 @@ class SearchViewModel(
 
     fun setLicenseFilter(filter: LicenseFilter) {
         _uiState.update { it.copy(filters = it.filters.copy(licenseFilter = filter)) }
+    }
+
+    fun toggleSource(source: SourceType) {
+        _uiState.update { state ->
+            val current = state.filters.enabledSources.toMutableSet()
+            if (source in current) {
+                if (current.size > 1) current.remove(source)
+            } else {
+                current.add(source)
+            }
+            uiPreferences.setEnabledSources(current)
+            state.copy(filters = state.filters.copy(enabledSources = current.toList()))
+        }
     }
 
     fun search(prefilledQuery: String? = null) {

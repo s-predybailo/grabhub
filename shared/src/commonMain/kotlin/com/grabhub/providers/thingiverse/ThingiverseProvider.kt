@@ -1,5 +1,6 @@
 package com.grabhub.providers.thingiverse
 
+import com.grabhub.domain.FeedType
 import com.grabhub.domain.ModelDetail
 import com.grabhub.domain.ModelItem
 import com.grabhub.domain.SearchPage
@@ -7,6 +8,9 @@ import com.grabhub.domain.SearchQuery
 import com.grabhub.domain.SourceType
 import com.grabhub.providers.DetailProvider
 import com.grabhub.providers.SearchProvider
+import com.grabhub.providers.mergeImageUrls
+import com.grabhub.providers.normalizeImageUrl
+import com.grabhub.util.formatModelDescription
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
@@ -30,24 +34,43 @@ class ThingiverseProvider(
     override suspend fun search(query: SearchQuery): SearchPage {
         if (accessToken.isBlank()) {
             throw ThingiverseNotConfiguredException(
-                "Thingiverse access token is not configured. Register at https://www.thingiverse.com/developers",
+                "Thingiverse access token is not configured.",
             )
         }
 
-        val responseText = httpClient.get("$API_BASE/search/$query.text") {
-            parameter("access_token", accessToken)
-            parameter("page", query.page)
-            parameter("per_page", query.pageSize)
-        }.bodyAsText()
+        val responseText = when (query.feedType) {
+            FeedType.LATEST, FeedType.TRENDING -> httpClient.get("$API_BASE/newest") {
+                parameter("access_token", accessToken)
+                parameter("page", query.page)
+                parameter("per_page", query.pageSize)
+            }.bodyAsText()
 
-        val response = json.decodeFromString<ThingiverseSearchResponse>(responseText)
-        val hits = response.hits.orEmpty()
+            FeedType.POPULAR, FeedType.DISCOVER -> httpClient.get("$API_BASE/popular") {
+                parameter("access_token", accessToken)
+                parameter("page", query.page)
+                parameter("per_page", query.pageSize)
+            }.bodyAsText()
+
+            null -> httpClient.get("${API_BASE}/search/${query.text}") {
+                parameter("access_token", accessToken)
+                parameter("page", query.page)
+                parameter("per_page", query.pageSize)
+            }.bodyAsText()
+        }
+
+        val items = when (query.feedType) {
+            null -> json.decodeFromString<ThingiverseSearchResponse>(responseText).hits.orEmpty()
+                .map { it.toModelItem() }
+
+            else -> json.decodeFromString<List<ThingiverseThing>>(responseText)
+                .map { it.toModelItem() }
+        }
 
         return SearchPage(
-            items = hits.map { it.toModelItem() },
+            items = items,
             page = query.page,
             pageSize = query.pageSize,
-            hasMore = hits.size >= query.pageSize,
+            hasMore = items.size >= query.pageSize,
         )
     }
 
@@ -60,14 +83,44 @@ class ThingiverseProvider(
 
         val thing = json.decodeFromString<ThingiverseThing>(responseText)
         val item = thing.toModelItem()
+        val galleryImages = fetchThingImages(sourceId)
 
         return ModelDetail(
             item = item,
-            description = thing.description,
-            images = listOfNotNull(thing.thumbnail, thing.defaultImage?.url).distinct(),
+            description = formatModelDescription(thing.description),
+            images = mergeImageUrls(
+                listOfNotNull(thing.thumbnail, thing.defaultImage?.url),
+                galleryImages,
+            ),
             license = thing.license,
             fileCount = thing.fileCount,
+            commentCount = thing.commentCount,
+            makeCount = thing.makeCount,
+            viewCount = thing.viewCount,
         )
+    }
+
+    private suspend fun fetchThingImages(sourceId: String): List<String> {
+        return runCatching {
+            val responseText = httpClient.get("$API_BASE/things/$sourceId/images") {
+                parameter("access_token", accessToken)
+            }.bodyAsText()
+            json.decodeFromString<List<ThingiverseImageEntry>>(responseText)
+                .mapNotNull { entry -> bestImageUrl(entry) }
+                .distinct()
+        }.getOrDefault(emptyList())
+    }
+
+    private fun bestImageUrl(entry: ThingiverseImageEntry): String? {
+        val sized = entry.sizes.orEmpty()
+        val preferred = listOf("display", "large", "preview", "medium", "thumb")
+        for (type in preferred) {
+            val match = sized.firstOrNull { it.type == type }?.url
+            if (!match.isNullOrBlank()) {
+                return normalizeImageUrl(match)
+            }
+        }
+        return normalizeImageUrl(entry.url)
     }
 
     private fun ThingiverseHit.toModelItem(): ModelItem {
@@ -78,14 +131,14 @@ class ThingiverseProvider(
             id = "thingiverse:$thingId",
             sourceId = thingId,
             title = name ?: "Untitled",
-            imageUrl = thumbnail,
-            previewUrl = thumbnail,
+            imageUrl = normalizeImageUrl(thumbnail),
+            previewUrl = normalizeImageUrl(thumbnail),
             author = creator?.name ?: creator?.publicName,
             source = SourceType.THINGIVERSE,
             modelUrl = modelUrl,
             likes = likeCount,
             downloads = null,
-            tags = tags,
+            tags = tags.toTagNames(),
             isFree = true,
             price = null,
         )
@@ -99,18 +152,29 @@ class ThingiverseProvider(
             id = "thingiverse:$thingId",
             sourceId = thingId,
             title = name ?: "Untitled",
-            imageUrl = thumbnail ?: defaultImage?.url,
-            previewUrl = thumbnail ?: defaultImage?.url,
+            imageUrl = normalizeImageUrl(thumbnail ?: defaultImage?.url),
+            previewUrl = normalizeImageUrl(thumbnail ?: defaultImage?.url),
             author = creator?.name ?: creator?.publicName,
             source = SourceType.THINGIVERSE,
             modelUrl = modelUrl,
             likes = likeCount,
             downloads = null,
-            tags = tags,
+            tags = tags.toTagNames(),
             isFree = true,
             price = null,
         )
     }
+
+    private fun List<ThingiverseTag>?.toTagNames(): List<String>? =
+        this?.mapNotNull { tag -> tag.name?.takeIf { it.isNotBlank() } ?: tag.tag }
+            ?.distinct()
+            ?.takeIf { it.isNotEmpty() }
+
+    @Serializable
+    private data class ThingiverseTag(
+        val name: String? = null,
+        val tag: String? = null,
+    )
 
     @Serializable
     private data class ThingiverseThing(
@@ -124,11 +188,30 @@ class ThingiverseProvider(
         val likeCount: Int? = null,
         @SerialName("file_count")
         val fileCount: Int? = null,
-        val tags: List<String>? = null,
+        @SerialName("comment_count")
+        val commentCount: Int? = null,
+        @SerialName("make_count")
+        val makeCount: Int? = null,
+        @SerialName("view_count")
+        val viewCount: Int? = null,
+        val tags: List<ThingiverseTag>? = null,
         val license: String? = null,
         val creator: ThingiverseCreator? = null,
         @SerialName("default_image")
         val defaultImage: ThingiverseImage? = null,
+    )
+
+    @Serializable
+    private data class ThingiverseImageEntry(
+        val id: Long? = null,
+        val url: String? = null,
+        val sizes: List<ThingiverseImageSize>? = null,
+    )
+
+    @Serializable
+    private data class ThingiverseImageSize(
+        val type: String? = null,
+        val url: String? = null,
     )
 
     @Serializable
@@ -151,7 +234,7 @@ class ThingiverseProvider(
         val publicUrl: String? = null,
         @SerialName("like_count")
         val likeCount: Int? = null,
-        val tags: List<String>? = null,
+        val tags: List<ThingiverseTag>? = null,
         val creator: ThingiverseCreator? = null,
     )
 

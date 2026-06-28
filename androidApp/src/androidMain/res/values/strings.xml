@@ -1,4 +1,136 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">GrabHub</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_search">Search</string>
+    <string name="nav_favorites">Favorites</string>
+    <string name="nav_history">History</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Search -->
+    <string name="search_subtitle">Search 3D models · v%1$s</string>
+    <string name="search_placeholder">Benchy, vase, articulated dragon…</string>
+    <string name="search_clear">Clear query</string>
+    <string name="search_toggle_filters">Filters</string>
+    <string name="results_count">%1$d results</string>
+    <string name="start_exploring">Start exploring</string>
+    <string name="start_exploring_subtitle">Enter a model name, author, or keyword to search Printables, Thingiverse, MakerWorld, and Creality Cloud</string>
+    <string name="search_failed">Search failed</string>
+    <string name="unknown_error">Unknown error</string>
+    <string name="no_models_found">No models found</string>
+    <string name="no_models_found_subtitle">Try another query or adjust filters</string>
+    <string name="some_sources_failed">Some sources failed</string>
+    <string name="dismiss_warnings">Dismiss</string>
+    <string name="thingiverse_token_hint">Configure an access token in Settings.</string>
+
+    <!-- Filters -->
+    <string name="filter_price">Price</string>
+    <string name="filter_sort">Sort</string>
+    <string name="filter_license">License</string>
+    <string name="filter_sources">Sources</string>
+    <string name="filter_all">All</string>
+    <string name="filter_free">Free</string>
+    <string name="filter_paid">Paid</string>
+    <string name="filter_relevance">Relevance</string>
+    <string name="filter_popular">Popular</string>
+    <string name="filter_commercial">Commercial</string>
+    <string name="filter_non_commercial">Non-commercial</string>
+    <string name="filter_sources_hint">Select platforms to search. At least one source must stay enabled.</string>
+
+    <!-- View mode -->
+    <string name="view_grid">Grid</string>
+    <string name="view_list">List</string>
+
+    <!-- Sources -->
+    <string name="source_printables">Printables</string>
+    <string name="source_thingiverse">Thingiverse</string>
+    <string name="source_makerworld">MakerWorld</string>
+    <string name="source_creality">Creality</string>
+
+    <!-- Favorites -->
+    <string name="favorites_title">Favorites</string>
+    <string name="favorites_empty_title">No favorites yet</string>
+    <string name="favorites_empty_subtitle">Tap the heart on a model detail page to save it here</string>
+    <string name="favorites_count">%1$d saved</string>
+
+    <!-- History -->
+    <string name="history_title">History</string>
+    <string name="history_empty_title">No search history</string>
+    <string name="history_empty_subtitle">Your recent searches will appear here</string>
+    <string name="history_clear">Clear history</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_language_system">System</string>
+    <string name="settings_language_ru">Русский</string>
+    <string name="settings_language_en">English</string>
+    <string name="settings_default_sources">Default search sources</string>
+    <string name="settings_default_sources_subtitle">Used when you open the search screen</string>
+    <string name="settings_view_mode">Results layout</string>
+    <string name="settings_view_mode_subtitle">Grid or list for search results</string>
+    <string name="settings_thingiverse">Thingiverse</string>
+    <string name="settings_thingiverse_configured">Access token is configured</string>
+    <string name="settings_thingiverse_missing">Access token is not configured. Add THINGIVERSE_ACCESS_TOKEN when building the app or in CI secrets.</string>
+    <string name="settings_about">About</string>
+    <string name="settings_version">Version %1$s</string>
+
+    <!-- Detail -->
+    <string name="detail_back">Back</string>
+    <string name="detail_open">Open on site</string>
+    <string name="detail_favorite_add">Add to favorites</string>
+    <string name="detail_favorite_remove">Remove from favorites</string>
+    <string name="detail_loading">Loading model…</string>
+    <string name="detail_error">Could not load model</string>
+    <string name="detail_author">Author</string>
+    <string name="detail_license">License</string>
+    <string name="detail_tags">Tags</string>
+    <string name="detail_description">Description</string>
+    <string name="detail_by_author">by %1$s</string>
+    <string name="detail_show_more">Show more</string>
+    <string name="detail_show_less">Show less</string>
+    <string name="detail_open_gallery">Open gallery</string>
+    <string name="detail_close_gallery">Close gallery</string>
+    <string name="detail_image_counter">%1$d / %2$d</string>
+    <string name="stat_likes">Likes</string>
+    <string name="stat_downloads">Downloads</string>
+    <string name="stat_comments">Comments</string>
+    <string name="stat_makes">Makes</string>
+    <string name="stat_views">Views</string>
+    <string name="stat_files">Files</string>
+    <string name="stat_price">Price</string>
+    <string name="detail_share">Share</string>
+    <string name="detail_unknown_author">Unknown author</string>
+    <string name="detail_sections">Sections</string>
+    <string name="detail_section_comments">Comments</string>
+    <string name="detail_section_makes">Makes</string>
+    <string name="detail_section_files">Files</string>
+    <string name="detail_section_downloads">Downloads</string>
+    <string name="detail_section_open_on_site">View on site · %1$s</string>
+
+    <!-- Home -->
+    <string name="home_subtitle">Discover 3D models · v%1$s</string>
+    <string name="home_shortcut_popular">Popular</string>
+    <string name="home_shortcut_latest">Latest</string>
+    <string name="home_shortcut_trending">Trending</string>
+    <string name="home_shortcut_history">History</string>
+    <string name="home_feed_title">Discover</string>
+    <string name="home_feed_count">%1$d models</string>
+    <string name="home_feed_error_title">Could not load feed</string>
+    <string name="home_feed_error_subtitle">Check your connection and try again</string>
+    <string name="home_feed_retry">Retry</string>
+
+    <!-- Feeds -->
+    <string name="feed_trending_title">Trending today</string>
+    <string name="feed_trending_subtitle">Recent popular models from all sources</string>
+    <string name="feed_popular_title">Popular</string>
+    <string name="feed_popular_subtitle">Most liked and downloaded models</string>
+    <string name="feed_latest_title">Latest</string>
+    <string name="feed_latest_subtitle">Newest uploads across platforms</string>
+    <string name="feed_discover_subtitle">Hand-picked popular models to explore</string>
+
+    <!-- Common -->
+    <string name="loading">Loading…</string>
 </resources>

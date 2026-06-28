@@ -105,8 +105,11 @@ class LocalCache(
         const val DEFAULT_TTL_MILLIS = 15 * 60 * 1000L
         const val HISTORY_LIMIT = 50L
 
-        fun searchCacheKey(query: SearchQuery, json: Json = Json { ignoreUnknownKeys = true }): String =
-            "search:${query.text.trim().lowercase()}:${query.page}:${query.pageSize}:${json.encodeToString(query.filters)}"
+        fun searchCacheKey(query: SearchQuery, json: Json = Json { ignoreUnknownKeys = true }): String {
+            val feedPart = query.feedType?.name?.lowercase() ?: "search"
+            val textPart = if (query.feedType != null) feedPart else query.text.trim().lowercase()
+            return "search:v3:$textPart:${query.page}:${query.pageSize}:${json.encodeToString(query.filters)}"
+        }
     }
 }
 

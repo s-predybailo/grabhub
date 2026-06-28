@@ -4,6 +4,7 @@ import com.grabhub.domain.LicenseFilter
 import com.grabhub.domain.ModelItem
 import com.grabhub.domain.PriceFilter
 import com.grabhub.domain.SearchFilters
+import com.grabhub.domain.SearchQuery
 import com.grabhub.domain.SortOrder
 import com.grabhub.domain.SourceType
 import kotlin.test.Test
@@ -35,7 +36,10 @@ class SearchResultProcessorTest {
         )
         val filters = SearchFilters(sortOrder = SortOrder.POPULARITY)
 
-        val result = SearchResultProcessor.process(items, "test", filters)
+        val result = SearchResultProcessor.process(
+            items,
+            SearchQuery(text = "test", filters = filters),
+        )
 
         assertEquals("printables:2", result.first().id)
     }
