@@ -6,85 +6,87 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.grabhub.android.R
 import com.grabhub.android.ui.components.GrabHubEmptyState
+import com.grabhub.android.ui.components.label
 import com.grabhub.android.ui.theme.GrabHubShapes
 import com.grabhub.cache.SearchHistoryEntry
+import com.grabhub.domain.SourceType
 import org.koin.androidx.compose.koinViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(
     onQueryClick: (String) -> Unit,
     viewModel: HistoryViewModel = koinViewModel(),
 ) {
     val entries by viewModel.entries.collectAsStateWithLifecycle()
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
     LaunchedEffect(Unit) {
         viewModel.refresh()
     }
 
-    Scaffold(
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        topBar = {
-            LargeTopAppBar(
-                title = { Text("History") },
-                actions = {
-                    if (entries.isNotEmpty()) {
-                        TextButton(onClick = viewModel::clearAll) {
-                            Text("Clear all")
-                        }
-                    }
-                },
-                scrollBehavior = scrollBehavior,
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .statusBarsPadding()
+            .padding(horizontal = 16.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(R.string.history_title),
+                style = MaterialTheme.typography.headlineMedium,
             )
-        },
-    ) { padding ->
+            if (entries.isNotEmpty()) {
+                TextButton(onClick = viewModel::clearAll) {
+                    Text(stringResource(R.string.history_clear))
+                }
+            }
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+
         if (entries.isEmpty()) {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
+                modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
             ) {
                 GrabHubEmptyState(
-                    title = "No search history",
-                    subtitle = "Your recent searches will appear here for quick access",
+                    title = stringResource(R.string.history_empty_title),
+                    subtitle = stringResource(R.string.history_empty_subtitle),
                 )
             }
         } else {
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(horizontal = 16.dp),
-                contentPadding = PaddingValues(vertical = 8.dp),
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 items(entries, key = { it.query }) { entry ->
@@ -153,8 +155,12 @@ private fun HistoryEntryCard(
     }
 }
 
+@Composable
 private fun filterSummary(entry: SearchHistoryEntry): String {
-    val price = entry.filters.priceFilter.name.lowercase().replace('_', ' ')
-    val sort = entry.filters.sortOrder.name.lowercase()
-    return "$price · $sort"
+    if (entry.filters.enabledSources.size >= SourceType.entries.size) {
+        return stringResource(R.string.filter_all)
+    }
+    return entry.filters.enabledSources
+        .map { source -> source.label() }
+        .joinToString(", ")
 }

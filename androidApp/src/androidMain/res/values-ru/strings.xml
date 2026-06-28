@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">GrabHub</string>
+
+    <!-- Navigation -->
+    <string name="nav_search">Поиск</string>
+    <string name="nav_favorites">Избранное</string>
+    <string name="nav_history">История</string>
+    <string name="nav_settings">Настройки</string>
+
+    <!-- Search -->
+    <string name="search_subtitle">Поиск 3D-моделей · v%1$s</string>
+    <string name="search_placeholder">Benchy, ваза, articulated dragon…</string>
+    <string name="search_clear">Очистить запрос</string>
+    <string name="search_toggle_filters">Фильтры</string>
+    <string name="results_count">%1$d результатов</string>
+    <string name="start_exploring">Начните поиск</string>
+    <string name="start_exploring_subtitle">Введите название модели, автора или ключевое слово — ищем на Printables, Thingiverse, MakerWorld и Creality Cloud</string>
+    <string name="search_failed">Ошибка поиска</string>
+    <string name="unknown_error">Неизвестная ошибка</string>
+    <string name="no_models_found">Модели не найдены</string>
+    <string name="no_models_found_subtitle">Попробуйте другой запрос или измените фильтры</string>
+    <string name="some_sources_failed">Некоторые источники недоступны</string>
+    <string name="dismiss_warnings">Скрыть</string>
+    <string name="thingiverse_token_hint">Настройте access token в разделе «Настройки».</string>
+
+    <!-- Filters -->
+    <string name="filter_price">Цена</string>
+    <string name="filter_sort">Сортировка</string>
+    <string name="filter_license">Лицензия</string>
+    <string name="filter_sources">Источники</string>
+    <string name="filter_all">Все</string>
+    <string name="filter_free">Бесплатно</string>
+    <string name="filter_paid">Платно</string>
+    <string name="filter_relevance">Релевантность</string>
+    <string name="filter_popular">Популярность</string>
+    <string name="filter_commercial">Коммерческая</string>
+    <string name="filter_non_commercial">Некоммерческая</string>
+    <string name="filter_sources_hint">Выберите площадки для поиска. Должен остаться хотя бы один источник.</string>
+
+    <!-- View mode -->
+    <string name="view_grid">Сетка</string>
+    <string name="view_list">Список</string>
+
+    <!-- Sources -->
+    <string name="source_printables">Printables</string>
+    <string name="source_thingiverse">Thingiverse</string>
+    <string name="source_makerworld">MakerWorld</string>
+    <string name="source_creality">Creality</string>
+
+    <!-- Favorites -->
+    <string name="favorites_title">Избранное</string>
+    <string name="favorites_empty_title">Пока пусто</string>
+    <string name="favorites_empty_subtitle">Нажмите сердечко на странице модели, чтобы сохранить её здесь</string>
+    <string name="favorites_count">%1$d сохранено</string>
+
+    <!-- History -->
+    <string name="history_title">История</string>
+    <string name="history_empty_title">История пуста</string>
+    <string name="history_empty_subtitle">Здесь появятся ваши недавние запросы</string>
+    <string name="history_clear">Очистить историю</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Настройки</string>
+    <string name="settings_language">Язык</string>
+    <string name="settings_language_system">Системный</string>
+    <string name="settings_language_ru">Русский</string>
+    <string name="settings_language_en">English</string>
+    <string name="settings_default_sources">Источники по умолчанию</string>
+    <string name="settings_default_sources_subtitle">Используются при открытии экрана поиска</string>
+    <string name="settings_view_mode">Вид результатов</string>
+    <string name="settings_view_mode_subtitle">Сетка или список в результатах поиска</string>
+    <string name="settings_thingiverse">Thingiverse</string>
+    <string name="settings_thingiverse_configured">Access token настроен</string>
+    <string name="settings_thingiverse_missing">Access token не настроен. Добавьте THINGIVERSE_ACCESS_TOKEN при сборке или в секреты CI.</string>
+    <string name="settings_about">О приложении</string>
+    <string name="settings_version">Версия %1$s</string>
+
+    <!-- Detail -->
+    <string name="detail_back">Назад</string>
+    <string name="detail_open">Открыть на сайте</string>
+    <string name="detail_favorite_add">В избранное</string>
+    <string name="detail_favorite_remove">Убрать из избранного</string>
+    <string name="detail_loading">Загрузка модели…</string>
+    <string name="detail_error">Не удалось загрузить модель</string>
+    <string name="detail_author">Автор</string>
+    <string name="detail_license">Лицензия</string>
+    <string name="detail_tags">Теги</string>
+
+    <!-- Common -->
+    <string name="loading">Загрузка…</string>
+</resources>

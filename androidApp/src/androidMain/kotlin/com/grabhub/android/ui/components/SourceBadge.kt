@@ -21,7 +21,8 @@ fun SourceBadge(
     source: SourceType,
     modifier: Modifier = Modifier,
 ) {
-    val (label, tint) = sourceStyle(source)
+    val label = source.label()
+    val tint = sourceColor(source)
     Surface(
         modifier = modifier,
         color = tint.copy(alpha = 0.18f),
@@ -37,9 +38,9 @@ fun SourceBadge(
     }
 }
 
-private fun sourceStyle(source: SourceType): Pair<String, Color> = when (source) {
-    SourceType.PRINTABLES -> "Printables" to SourcePrintables
-    SourceType.THINGIVERSE -> "Thingiverse" to SourceThingiverse
-    SourceType.MAKERWORLD -> "MakerWorld" to SourceMakerWorld
-    SourceType.CREALITY_CLOUD -> "Creality" to SourceCreality
+private fun sourceColor(source: SourceType): Color = when (source) {
+    SourceType.PRINTABLES -> SourcePrintables
+    SourceType.THINGIVERSE -> SourceThingiverse
+    SourceType.MAKERWORLD -> SourceMakerWorld
+    SourceType.CREALITY_CLOUD -> SourceCreality
 }

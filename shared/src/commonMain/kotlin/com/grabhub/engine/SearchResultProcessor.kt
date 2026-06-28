@@ -5,6 +5,7 @@ import com.grabhub.domain.ModelItem
 import com.grabhub.domain.PriceFilter
 import com.grabhub.domain.SearchFilters
 import com.grabhub.domain.SortOrder
+import com.grabhub.domain.SourceType
 
 object SearchResultProcessor {
 
@@ -14,7 +15,16 @@ object SearchResultProcessor {
     }
 
     fun applyFilters(items: List<ModelItem>, filters: SearchFilters): List<ModelItem> =
-        items.filter { item -> matchesPrice(item, filters.priceFilter) && matchesLicense(item, filters.licenseFilter) }
+        items.filter { item ->
+            matchesSource(item, filters.enabledSources) &&
+                matchesPrice(item, filters.priceFilter) &&
+                matchesLicense(item, filters.licenseFilter)
+        }
+
+    private fun matchesSource(item: ModelItem, enabledSources: List<SourceType>): Boolean {
+        if (enabledSources.isEmpty()) return true
+        return item.source in enabledSources
+    }
 
     private fun matchesPrice(item: ModelItem, filter: PriceFilter): Boolean = when (filter) {
         PriceFilter.ALL -> true

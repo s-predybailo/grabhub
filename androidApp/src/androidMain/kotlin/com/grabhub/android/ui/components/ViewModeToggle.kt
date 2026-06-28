@@ -20,7 +20,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.grabhub.android.R
 import com.grabhub.android.ui.preferences.ResultsViewMode
 
 @Composable
@@ -42,13 +44,13 @@ fun ViewModeToggle(
             ViewModeButton(
                 selected = mode == ResultsViewMode.GRID,
                 onClick = { onModeChange(ResultsViewMode.GRID) },
-                label = "Grid",
+                label = stringResource(R.string.view_grid),
                 icon = { Icon(Icons.Default.GridView, contentDescription = null) },
             )
             ViewModeButton(
                 selected = mode == ResultsViewMode.LIST,
                 onClick = { onModeChange(ResultsViewMode.LIST) },
-                label = "List",
+                label = stringResource(R.string.view_list),
                 icon = { Icon(Icons.AutoMirrored.Filled.ViewList, contentDescription = null) },
             )
         }

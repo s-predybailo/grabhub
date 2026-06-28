@@ -27,4 +27,5 @@ data class SearchFilters(
     val priceFilter: PriceFilter = PriceFilter.ALL,
     val sortOrder: SortOrder = SortOrder.RELEVANCE,
     val licenseFilter: LicenseFilter = LicenseFilter.ALL,
+    val enabledSources: List<SourceType> = SourceType.entries,
 )

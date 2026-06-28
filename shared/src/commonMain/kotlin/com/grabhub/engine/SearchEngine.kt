@@ -16,7 +16,11 @@ class SearchEngine(
 ) {
 
     suspend fun search(query: SearchQuery): SearchResult = coroutineScope {
-        val deferredResults = providers.map { provider ->
+        val enabledSources = query.filters.enabledSources.toSet()
+        val activeProviders = providers.filter { provider ->
+            enabledSources.isEmpty() || provider.source in enabledSources
+        }
+        val deferredResults = activeProviders.map { provider ->
             async {
                 runCatching { provider.search(query) }
                     .fold(
