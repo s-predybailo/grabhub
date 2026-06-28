@@ -1,6 +1,7 @@
 package com.grabhub.android.di
 
 import com.grabhub.android.ui.detail.DetailViewModel
+import com.grabhub.android.ui.home.HomeViewModel
 import com.grabhub.android.ui.preferences.UiPreferences
 import com.grabhub.android.ui.favorites.FavoritesViewModel
 import com.grabhub.android.ui.history.HistoryViewModel
@@ -13,6 +14,7 @@ import org.koin.dsl.module
 val androidModule = module {
     single { UiPreferences(androidContext()) }
     viewModel { SearchViewModel(get(), get()) }
+    viewModel { HomeViewModel(get(), get()) }
     viewModel { DetailViewModel(get(), get()) }
     viewModel { FavoritesViewModel(get()) }
     viewModel { HistoryViewModel(get()) }

@@ -3,6 +3,7 @@
     <string name="app_name">GrabHub</string>
 
     <!-- Navigation -->
+    <string name="nav_home">Главная</string>
     <string name="nav_search">Поиск</string>
     <string name="nav_favorites">Избранное</string>
     <string name="nav_history">История</string>
@@ -86,6 +87,34 @@
     <string name="detail_author">Автор</string>
     <string name="detail_license">Лицензия</string>
     <string name="detail_tags">Теги</string>
+    <string name="detail_description">Описание</string>
+    <string name="detail_by_author">автор: %1$s</string>
+    <string name="detail_show_more">Показать полностью</string>
+    <string name="detail_show_less">Свернуть</string>
+    <string name="detail_open_gallery">Открыть галерею</string>
+    <string name="detail_close_gallery">Закрыть галерею</string>
+    <string name="detail_image_counter">%1$d / %2$d</string>
+    <string name="stat_likes">Лайки</string>
+    <string name="stat_downloads">Скачивания</string>
+    <string name="stat_comments">Комментарии</string>
+    <string name="stat_makes">Сборки</string>
+    <string name="stat_views">Просмотры</string>
+    <string name="stat_files">Файлы</string>
+    <string name="stat_price">Цена</string>
+    <string name="detail_share">Поделиться</string>
+    <string name="detail_unknown_author">Автор неизвестен</string>
+
+    <!-- Home -->
+    <string name="home_subtitle">3D-модели · v%1$s</string>
+    <string name="home_shortcut_popular">Популярное</string>
+    <string name="home_shortcut_latest">Новинки</string>
+    <string name="home_shortcut_trending">В тренде</string>
+    <string name="home_shortcut_history">История</string>
+    <string name="home_feed_title">Подборка</string>
+    <string name="home_feed_count">%1$d моделей</string>
+    <string name="home_feed_error_title">Не удалось загрузить ленту</string>
+    <string name="home_feed_error_subtitle">Проверьте подключение и попробуйте снова</string>
+    <string name="home_feed_retry">Повторить</string>
 
     <!-- Common -->
     <string name="loading">Загрузка…</string>

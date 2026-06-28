@@ -5,15 +5,21 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -22,7 +28,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -101,6 +109,7 @@ fun ModelGridItem(
     item: ModelItem,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    overlayBadges: Boolean = false,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val pressed by interactionSource.collectIsPressedAsState()
@@ -122,14 +131,55 @@ fun ModelGridItem(
         interactionSource = interactionSource,
     ) {
         Column {
-            ModelThumbnail(
-                imageUrl = item.bestThumbnailUrl(),
-                contentDescription = item.title,
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(4f / 3f),
-                contentScale = ContentScale.Crop,
-            )
+            ) {
+                ModelThumbnail(
+                    imageUrl = item.bestThumbnailUrl(),
+                    contentDescription = item.title,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                )
+                if (overlayBadges) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(8.dp),
+                    ) {
+                        SourceBadge(
+                            source = item.source,
+                            modifier = Modifier.align(Alignment.TopStart),
+                        )
+                        item.likes?.let { likes ->
+                            Surface(
+                                modifier = Modifier.align(Alignment.TopEnd),
+                                color = Color.Black.copy(alpha = 0.45f),
+                                shape = RoundedCornerShape(999.dp),
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Favorite,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(12.dp),
+                                        tint = Color.White,
+                                    )
+                                    Text(
+                                        text = formatStatCount(likes),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = Color.White,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -155,13 +205,15 @@ fun ModelGridItem(
                         )
                     }
                 }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    SourceBadge(source = item.source)
-                    ModelStatsRow(item = item, compact = true)
+                if (!overlayBadges) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        SourceBadge(source = item.source)
+                        ModelStatsRow(item = item, compact = true)
+                    }
                 }
             }
         }

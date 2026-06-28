@@ -9,6 +9,7 @@ import com.grabhub.providers.DetailProvider
 import com.grabhub.providers.SearchProvider
 import com.grabhub.providers.mergeImageUrls
 import com.grabhub.providers.normalizeImageUrl
+import com.grabhub.util.formatModelDescription
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
@@ -57,10 +58,13 @@ class MakerWorldProvider(
 
         return ModelDetail(
             item = item,
-            description = design.summary?.takeIf { it.isNotBlank() },
+            description = formatModelDescription(design.summary),
             images = images,
             license = design.license,
             fileCount = design.designExtension?.modelFiles?.size,
+            commentCount = design.commentCount,
+            makeCount = design.printCount,
+            viewCount = design.readCount?.takeIf { it > 0 },
         )
     }
 
@@ -175,6 +179,12 @@ class MakerWorldProvider(
         val likeCount: Int? = null,
         @SerialName("downloadCount")
         val downloadCount: Int? = null,
+        @SerialName("commentCount")
+        val commentCount: Int? = null,
+        @SerialName("printCount")
+        val printCount: Int? = null,
+        @SerialName("readCount")
+        val readCount: Int? = null,
         val tags: List<String>? = null,
         val license: String? = null,
         @SerialName("is_point_redeemable")

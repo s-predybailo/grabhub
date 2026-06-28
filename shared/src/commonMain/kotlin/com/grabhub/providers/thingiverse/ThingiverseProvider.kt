@@ -9,6 +9,7 @@ import com.grabhub.providers.DetailProvider
 import com.grabhub.providers.SearchProvider
 import com.grabhub.providers.mergeImageUrls
 import com.grabhub.providers.normalizeImageUrl
+import com.grabhub.util.formatModelDescription
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
@@ -36,7 +37,7 @@ class ThingiverseProvider(
             )
         }
 
-        val responseText = httpClient.get("$API_BASE/search/$query.text") {
+        val responseText = httpClient.get("${API_BASE}/search/${query.text}") {
             parameter("access_token", accessToken)
             parameter("page", query.page)
             parameter("per_page", query.pageSize)
@@ -66,13 +67,16 @@ class ThingiverseProvider(
 
         return ModelDetail(
             item = item,
-            description = thing.description,
+            description = formatModelDescription(thing.description),
             images = mergeImageUrls(
                 listOfNotNull(thing.thumbnail, thing.defaultImage?.url),
                 galleryImages,
             ),
             license = thing.license,
             fileCount = thing.fileCount,
+            commentCount = thing.commentCount,
+            makeCount = thing.makeCount,
+            viewCount = thing.viewCount,
         )
     }
 
@@ -157,6 +161,12 @@ class ThingiverseProvider(
         val likeCount: Int? = null,
         @SerialName("file_count")
         val fileCount: Int? = null,
+        @SerialName("comment_count")
+        val commentCount: Int? = null,
+        @SerialName("make_count")
+        val makeCount: Int? = null,
+        @SerialName("view_count")
+        val viewCount: Int? = null,
         val tags: List<ThingiverseTag>? = null,
         val license: String? = null,
         val creator: ThingiverseCreator? = null,

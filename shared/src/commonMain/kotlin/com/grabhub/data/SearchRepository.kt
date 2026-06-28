@@ -22,8 +22,16 @@ class SearchRepository(
         }
 
         val result = searchEngine.search(query)
-        cache.putSearchResult(cacheKey, result)
+        if (shouldCache(result)) {
+            cache.putSearchResult(cacheKey, result)
+        }
         historyRepository.addSearch(query)
         return result
+    }
+
+    private fun shouldCache(result: SearchResult): Boolean {
+        // Avoid caching transient provider failures (e.g. parse errors) as empty results.
+        if (result.items.isNotEmpty()) return true
+        return result.errors.isEmpty()
     }
 }

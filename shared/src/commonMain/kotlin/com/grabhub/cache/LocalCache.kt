@@ -106,7 +106,7 @@ class LocalCache(
         const val HISTORY_LIMIT = 50L
 
         fun searchCacheKey(query: SearchQuery, json: Json = Json { ignoreUnknownKeys = true }): String =
-            "search:${query.text.trim().lowercase()}:${query.page}:${query.pageSize}:${json.encodeToString(query.filters)}"
+            "search:v2:${query.text.trim().lowercase()}:${query.page}:${query.pageSize}:${json.encodeToString(query.filters)}"
     }
 }
 

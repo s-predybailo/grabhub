@@ -18,27 +18,32 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.grabhub.android.ui.GrabHubTheme
-import com.grabhub.android.ui.components.GrabHubFloatingNavBar
 import com.grabhub.android.ui.components.BottomNavItem
+import com.grabhub.android.ui.components.GrabHubFloatingNavBar
 import com.grabhub.android.ui.detail.DetailScreen
 import com.grabhub.android.ui.favorites.FavoritesScreen
 import com.grabhub.android.ui.history.HistoryScreen
+import com.grabhub.android.ui.home.HomeScreen
 import com.grabhub.android.ui.search.SearchScreen
 import com.grabhub.android.ui.settings.SettingsScreen
+import com.grabhub.domain.SortOrder
 import java.net.URLDecoder
 import java.net.URLEncoder
 
-private val BottomNavClearance = 96.dp
+private val BottomNavClearance = 112.dp
 
 private object Routes {
-    const val SEARCH = "search/{prefill}"
+    const val HOME = "home"
+    const val SEARCH = "search/{prefill}/{sortOrder}"
     const val FAVORITES = "favorites"
     const val HISTORY = "history"
     const val SETTINGS = "settings"
     const val DETAIL = "detail/{modelId}"
     const val NONE = "_none_"
+    const val SORT_DEFAULT = "_default_"
 
-    fun searchDestination(prefill: String = NONE): String = "search/$prefill"
+    fun searchDestination(prefill: String = NONE, sortOrder: String = SORT_DEFAULT): String =
+        "search/$prefill/$sortOrder"
 }
 
 @Composable
@@ -46,18 +51,22 @@ fun GrabHubNavHost() {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-    val showBottomBar = currentRoute?.startsWith("search/") == true ||
+    val showBottomBar = currentRoute == Routes.HOME ||
+        currentRoute?.startsWith("search/") == true ||
         currentRoute == Routes.FAVORITES ||
         currentRoute == Routes.HISTORY ||
         currentRoute == Routes.SETTINGS
 
     val selectedRouteKey = when {
+        currentRoute == Routes.HOME -> "home"
         currentRoute?.startsWith("search/") == true -> "search"
         currentRoute == Routes.FAVORITES -> "favorites"
         currentRoute == Routes.HISTORY -> "history"
         currentRoute == Routes.SETTINGS -> "settings"
-        else -> "search"
+        else -> "home"
     }
+
+    val isSearchActive = currentRoute?.startsWith("search/") == true
 
     GrabHubTheme {
         Surface(
@@ -67,17 +76,34 @@ fun GrabHubNavHost() {
             Box(modifier = Modifier.fillMaxSize()) {
                 NavHost(
                     navController = navController,
-                    startDestination = Routes.searchDestination(),
+                    startDestination = Routes.HOME,
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(bottom = if (showBottomBar) BottomNavClearance else 0.dp),
                 ) {
+                    composable(Routes.HOME) {
+                        HomeScreen(
+                            onModelClick = { modelId ->
+                                navController.navigate(detailRoute(modelId))
+                            },
+                            onSearchShortcut = { query, sortOrder ->
+                                navigateToSearch(navController, query, sortOrder)
+                            },
+                            onOpenHistory = {
+                                navigateToTab(navController, GrabHubSideNavItem("history"))
+                            },
+                        )
+                    }
                     composable(
                         route = Routes.SEARCH,
                         arguments = listOf(
                             navArgument("prefill") {
                                 type = NavType.StringType
                                 defaultValue = Routes.NONE
+                            },
+                            navArgument("sortOrder") {
+                                type = NavType.StringType
+                                defaultValue = Routes.SORT_DEFAULT
                             },
                         ),
                     ) { entry ->
@@ -87,8 +113,10 @@ fun GrabHubNavHost() {
                         } else {
                             URLDecoder.decode(rawPrefill, Charsets.UTF_8.name())
                         }
+                        val sortOrder = parseSortOrder(entry.arguments?.getString("sortOrder"))
                         SearchScreen(
                             prefilledQuery = prefill,
+                            initialSortOrder = sortOrder,
                             onModelClick = { modelId ->
                                 navController.navigate(detailRoute(modelId))
                             },
@@ -104,13 +132,7 @@ fun GrabHubNavHost() {
                     composable(Routes.HISTORY) {
                         HistoryScreen(
                             onQueryClick = { query ->
-                                val encoded = URLEncoder.encode(query, Charsets.UTF_8.name())
-                                navController.navigate(Routes.searchDestination(encoded)) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
-                                    }
-                                    launchSingleTop = true
-                                }
+                                navigateToSearch(navController, query, SortOrder.RELEVANCE)
                             },
                         )
                     }
@@ -134,8 +156,22 @@ fun GrabHubNavHost() {
 
                 if (showBottomBar) {
                     GrabHubFloatingNavBar(
-                        selectedRouteKey = selectedRouteKey,
+                        selectedRouteKey = if (isSearchActive) {
+                            ""
+                        } else {
+                            selectedRouteKey
+                        },
+                        isSearchActive = isSearchActive,
                         onItemSelected = { item -> navigateToTab(navController, item) },
+                        onSearchClick = {
+                            navController.navigate(Routes.searchDestination()) {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
                         modifier = Modifier.align(Alignment.BottomCenter),
                     )
                 }
@@ -144,13 +180,18 @@ fun GrabHubNavHost() {
     }
 }
 
-private fun navigateToTab(navController: androidx.navigation.NavHostController, item: BottomNavItem) {
+private data class GrabHubSideNavItem(val routeKey: String)
+
+private fun navigateToTab(
+    navController: androidx.navigation.NavHostController,
+    item: BottomNavItem,
+) {
     val destination = when (item.routeKey) {
-        "search" -> Routes.searchDestination()
+        "home" -> Routes.HOME
         "favorites" -> Routes.FAVORITES
         "history" -> Routes.HISTORY
         "settings" -> Routes.SETTINGS
-        else -> Routes.searchDestination()
+        else -> Routes.HOME
     }
     navController.navigate(destination) {
         popUpTo(navController.graph.findStartDestination().id) {
@@ -159,6 +200,50 @@ private fun navigateToTab(navController: androidx.navigation.NavHostController, 
         launchSingleTop = true
         restoreState = true
     }
+}
+
+private fun navigateToTab(
+    navController: androidx.navigation.NavHostController,
+    item: GrabHubSideNavItem,
+) {
+    val destination = when (item.routeKey) {
+        "home" -> Routes.HOME
+        "favorites" -> Routes.FAVORITES
+        "history" -> Routes.HISTORY
+        "settings" -> Routes.SETTINGS
+        else -> Routes.HOME
+    }
+    navController.navigate(destination) {
+        popUpTo(navController.graph.findStartDestination().id) {
+            saveState = true
+        }
+        launchSingleTop = true
+        restoreState = true
+    }
+}
+
+private fun navigateToSearch(
+    navController: androidx.navigation.NavHostController,
+    query: String,
+    sortOrder: SortOrder,
+) {
+    val encoded = URLEncoder.encode(query, Charsets.UTF_8.name())
+    val sortArg = when (sortOrder) {
+        SortOrder.POPULARITY -> "popularity"
+        SortOrder.RELEVANCE -> "relevance"
+    }
+    navController.navigate(Routes.searchDestination(encoded, sortArg)) {
+        popUpTo(navController.graph.findStartDestination().id) {
+            saveState = true
+        }
+        launchSingleTop = true
+    }
+}
+
+private fun parseSortOrder(raw: String?): SortOrder? = when (raw) {
+    "popularity" -> SortOrder.POPULARITY
+    "relevance" -> SortOrder.RELEVANCE
+    else -> null
 }
 
 private fun detailRoute(modelId: String): String {

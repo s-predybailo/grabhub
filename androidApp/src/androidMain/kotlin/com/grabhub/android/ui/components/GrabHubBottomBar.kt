@@ -3,18 +3,24 @@ package com.grabhub.android.ui.components
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -37,9 +43,9 @@ data class BottomNavItem(
     val icon: ImageVector,
 )
 
-val GrabHubBottomNavItems = listOf(
-    BottomNavItem("search", R.string.nav_search, Icons.Default.Search),
+val GrabHubSideNavItems = listOf(
     BottomNavItem("favorites", R.string.nav_favorites, Icons.Default.Favorite),
+    BottomNavItem("home", R.string.nav_home, Icons.Default.Home),
     BottomNavItem("history", R.string.nav_history, Icons.Default.History),
     BottomNavItem("settings", R.string.nav_settings, Icons.Default.Settings),
 )
@@ -47,34 +53,80 @@ val GrabHubBottomNavItems = listOf(
 @Composable
 fun GrabHubFloatingNavBar(
     selectedRouteKey: String,
+    isSearchActive: Boolean,
     onItemSelected: (BottomNavItem) -> Unit,
+    onSearchClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Surface(
+    Box(
         modifier = modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(horizontal = 20.dp, vertical = 12.dp),
-        shape = RoundedCornerShape(28.dp),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
-        shadowElevation = 12.dp,
-        tonalElevation = 3.dp,
+            .padding(horizontal = 16.dp, vertical = 8.dp),
     ) {
-        Row(
+        Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 10.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically,
+                .align(Alignment.BottomCenter),
+            shape = RoundedCornerShape(28.dp),
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
+            shadowElevation = 12.dp,
+            tonalElevation = 3.dp,
         ) {
-            GrabHubBottomNavItems.forEach { item ->
-                val selected = selectedRouteKey == item.routeKey
-                FloatingNavBarItem(
-                    item = item,
-                    selected = selected,
-                    onClick = { onItemSelected(item) },
-                )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 6.dp, end = 6.dp, top = 10.dp, bottom = 10.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                GrabHubSideNavItems.take(2).forEach { item ->
+                    FloatingNavBarItem(
+                        item = item,
+                        selected = selectedRouteKey == item.routeKey,
+                        onClick = { onItemSelected(item) },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                Box(modifier = Modifier.size(72.dp))
+                GrabHubSideNavItems.drop(2).forEach { item ->
+                    FloatingNavBarItem(
+                        item = item,
+                        selected = selectedRouteKey == item.routeKey,
+                        onClick = { onItemSelected(item) },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
             }
+        }
+
+        FloatingActionButton(
+            onClick = onSearchClick,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .offset(y = (-8).dp)
+                .size(64.dp),
+            shape = CircleShape,
+            containerColor = if (isSearchActive) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.surface
+            },
+            elevation = FloatingActionButtonDefaults.elevation(
+                defaultElevation = 8.dp,
+                pressedElevation = 12.dp,
+            ),
+        ) {
+            Icon(
+                imageVector = Icons.Default.Search,
+                contentDescription = stringResource(R.string.nav_search),
+                modifier = Modifier.size(28.dp),
+                tint = if (isSearchActive) {
+                    MaterialTheme.colorScheme.onPrimary
+                } else {
+                    MaterialTheme.colorScheme.primary
+                },
+            )
         }
     }
 }
@@ -84,6 +136,7 @@ private fun FloatingNavBarItem(
     item: BottomNavItem,
     selected: Boolean,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val scale by animateFloatAsState(
         targetValue = if (selected) 1.05f else 1f,
@@ -92,7 +145,7 @@ private fun FloatingNavBarItem(
     )
     Surface(
         onClick = onClick,
-        modifier = Modifier
+        modifier = modifier
             .clip(RoundedCornerShape(20.dp))
             .scale(scale),
         color = if (selected) {
@@ -103,7 +156,9 @@ private fun FloatingNavBarItem(
         shape = RoundedCornerShape(20.dp),
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {

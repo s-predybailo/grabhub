@@ -8,6 +8,7 @@ import com.grabhub.domain.SourceType
 import com.grabhub.providers.DetailProvider
 import com.grabhub.providers.printablesMediaUrl
 import com.grabhub.providers.SearchProvider
+import com.grabhub.util.formatModelDescription
 import io.ktor.client.HttpClient
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
@@ -92,9 +93,9 @@ class PrintablesProvider(
 
         return ModelDetail(
             item = item,
-            description = print.description,
+            description = formatModelDescription(print.description),
             images = galleryImages.ifEmpty { listOfNotNull(item.imageUrl) },
-            license = print.license,
+            license = print.license?.name,
         )
     }
 
@@ -211,11 +212,16 @@ class PrintablesProvider(
         val downloadCount: Int? = null,
         val premium: Boolean = false,
         val price: Double? = null,
-        val license: String? = null,
+        val license: PrintLicense? = null,
         val user: PrintUser? = null,
         val image: PrintImage? = null,
         val images: List<PrintImage>? = null,
         val tags: List<PrintTag>? = null,
+    )
+
+    @Serializable
+    private data class PrintLicense(
+        val name: String? = null,
     )
 
     companion object {
@@ -252,7 +258,7 @@ class PrintablesProvider(
                 downloadCount
                 premium
                 price
-                license
+                license { name }
                 user { publicUsername handle }
                 image { filePath }
                 images { filePath }

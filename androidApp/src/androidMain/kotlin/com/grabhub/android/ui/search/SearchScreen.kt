@@ -75,6 +75,7 @@ import org.koin.androidx.compose.koinViewModel
 fun SearchScreen(
     onModelClick: (String) -> Unit,
     prefilledQuery: String? = null,
+    initialSortOrder: SortOrder? = null,
     viewModel: SearchViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -82,7 +83,8 @@ fun SearchScreen(
     var filtersExpanded by rememberSaveable { mutableStateOf(false) }
     var providerErrorsDismissed by rememberSaveable { mutableStateOf(false) }
 
-    LaunchedEffect(prefilledQuery) {
+    LaunchedEffect(prefilledQuery, initialSortOrder) {
+        initialSortOrder?.let { viewModel.setSortOrder(it) }
         prefilledQuery?.let { viewModel.search(it) }
     }
 
