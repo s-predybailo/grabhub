@@ -32,7 +32,7 @@ import com.grabhub.domain.SortOrder
 import java.net.URLDecoder
 import java.net.URLEncoder
 
-private val BottomNavClearance = 88.dp
+private val BottomNavClearance = 84.dp
 
 private object Routes {
     const val HOME = "home"
@@ -69,10 +69,9 @@ fun GrabHubNavHost() {
         currentRoute == Routes.FAVORITES -> "favorites"
         currentRoute == Routes.HISTORY -> "history"
         currentRoute == Routes.SETTINGS -> "settings"
+        currentRoute?.startsWith("feed/") == true -> "home"
         else -> "home"
     }
-
-    val isSearchActive = currentRoute?.startsWith("search/") == true
 
     GrabHubTheme {
         Surface(
@@ -177,22 +176,8 @@ fun GrabHubNavHost() {
 
                 if (showBottomBar) {
                     GrabHubFloatingNavBar(
-                        selectedRouteKey = if (isSearchActive) {
-                            ""
-                        } else {
-                            selectedRouteKey
-                        },
-                        isSearchActive = isSearchActive,
+                        selectedRouteKey = selectedRouteKey,
                         onItemSelected = { item -> navigateToTab(navController, item) },
-                        onSearchClick = {
-                            navController.navigate(Routes.searchDestination()) {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
-                                }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
                         modifier = Modifier.align(Alignment.BottomCenter),
                     )
                 }
@@ -209,6 +194,7 @@ private fun navigateToTab(
 ) {
     val destination = when (item.routeKey) {
         "home" -> Routes.HOME
+        "search" -> Routes.searchDestination()
         "favorites" -> Routes.FAVORITES
         "history" -> Routes.HISTORY
         "settings" -> Routes.SETTINGS

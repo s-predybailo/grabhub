@@ -56,8 +56,8 @@ android {
         applicationId = "com.grabhub.android"
         minSdk = 26
         targetSdk = 35
-        versionCode = 9
-        versionName = "0.7.2"
+        versionCode = 10
+        versionName = "0.7.3"
 
         val thingiverseToken = project.findProperty("THINGIVERSE_ACCESS_TOKEN") as String?
             ?: readLocalProperty("THINGIVERSE_ACCESS_TOKEN")

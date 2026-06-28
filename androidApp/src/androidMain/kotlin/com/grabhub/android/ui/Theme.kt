@@ -11,12 +11,12 @@ import com.grabhub.android.ui.theme.GrabHubTypography
 import com.grabhub.android.ui.theme.Indigo500
 import com.grabhub.android.ui.theme.Indigo600
 import com.grabhub.android.ui.theme.Indigo700
+import com.grabhub.android.ui.theme.NavViolet
 import com.grabhub.android.ui.theme.Slate100
 import com.grabhub.android.ui.theme.Slate50
 import com.grabhub.android.ui.theme.Slate800
 import com.grabhub.android.ui.theme.Slate900
 import com.grabhub.android.ui.theme.Slate950
-import com.grabhub.android.ui.theme.Violet400
 
 private val LightColors = lightColorScheme(
     primary = Indigo600,
@@ -42,9 +42,9 @@ private val LightColors = lightColorScheme(
 )
 
 private val DarkColors = darkColorScheme(
-    primary = Violet400,
+    primary = NavViolet,
     onPrimary = Slate950,
-    primaryContainer = Color(0xFF3730A3),
+    primaryContainer = Color(0xFF4C1D95),
     onPrimaryContainer = Color(0xFFE0E7FF),
     secondary = Color(0xFFC4B5FD),
     onSecondary = Slate950,

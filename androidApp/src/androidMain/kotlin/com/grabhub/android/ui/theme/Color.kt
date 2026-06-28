@@ -14,6 +14,7 @@ val Slate50 = Color(0xFFF8FAFC)
 val Emerald400 = Color(0xFF34D399)
 val Amber400 = Color(0xFFFBBF24)
 val Rose400 = Color(0xFFFB7185)
+val NavViolet = Color(0xFF8B5CF6)
 
 val SourcePrintables = Color(0xFF0EA5E9)
 val SourceThingiverse = Color(0xFF22C55E)
