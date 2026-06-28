@@ -1,9 +1,11 @@
 package com.grabhub.providers.thingiverse
 
+import com.grabhub.domain.ModelDetail
 import com.grabhub.domain.ModelItem
 import com.grabhub.domain.SearchPage
 import com.grabhub.domain.SearchQuery
 import com.grabhub.domain.SourceType
+import com.grabhub.providers.DetailProvider
 import com.grabhub.providers.SearchProvider
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
@@ -16,7 +18,7 @@ import kotlinx.serialization.json.Json
 class ThingiverseProvider(
     private val httpClient: HttpClient,
     private val accessToken: String,
-) : SearchProvider {
+) : SearchProvider, DetailProvider {
 
     override val source: SourceType = SourceType.THINGIVERSE
 
@@ -49,6 +51,25 @@ class ThingiverseProvider(
         )
     }
 
+    override suspend fun getDetail(sourceId: String): ModelDetail? {
+        if (accessToken.isBlank()) return null
+
+        val responseText = httpClient.get("$API_BASE/things/$sourceId") {
+            parameter("access_token", accessToken)
+        }.bodyAsText()
+
+        val thing = json.decodeFromString<ThingiverseThing>(responseText)
+        val item = thing.toModelItem()
+
+        return ModelDetail(
+            item = item,
+            description = thing.description,
+            images = listOfNotNull(thing.thumbnail, thing.defaultImage?.url).distinct(),
+            license = thing.license,
+            fileCount = thing.fileCount,
+        )
+    }
+
     private fun ThingiverseHit.toModelItem(): ModelItem {
         val thingId = id?.toString() ?: "unknown"
         val modelUrl = publicUrl ?: "https://www.thingiverse.com/thing:$thingId"
@@ -69,6 +90,51 @@ class ThingiverseProvider(
             price = null,
         )
     }
+
+    private fun ThingiverseThing.toModelItem(): ModelItem {
+        val thingId = id?.toString() ?: "unknown"
+        val modelUrl = publicUrl ?: "https://www.thingiverse.com/thing:$thingId"
+
+        return ModelItem(
+            id = "thingiverse:$thingId",
+            sourceId = thingId,
+            title = name ?: "Untitled",
+            imageUrl = thumbnail ?: defaultImage?.url,
+            previewUrl = thumbnail ?: defaultImage?.url,
+            author = creator?.name ?: creator?.publicName,
+            source = SourceType.THINGIVERSE,
+            modelUrl = modelUrl,
+            likes = likeCount,
+            downloads = null,
+            tags = tags,
+            isFree = true,
+            price = null,
+        )
+    }
+
+    @Serializable
+    private data class ThingiverseThing(
+        val id: Long? = null,
+        val name: String? = null,
+        val description: String? = null,
+        val thumbnail: String? = null,
+        @SerialName("public_url")
+        val publicUrl: String? = null,
+        @SerialName("like_count")
+        val likeCount: Int? = null,
+        @SerialName("file_count")
+        val fileCount: Int? = null,
+        val tags: List<String>? = null,
+        val license: String? = null,
+        val creator: ThingiverseCreator? = null,
+        @SerialName("default_image")
+        val defaultImage: ThingiverseImage? = null,
+    )
+
+    @Serializable
+    private data class ThingiverseImage(
+        val url: String? = null,
+    )
 
     @Serializable
     private data class ThingiverseSearchResponse(
