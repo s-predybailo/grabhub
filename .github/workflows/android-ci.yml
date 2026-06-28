@@ -46,7 +46,15 @@ jobs:
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: grabhub-${{ github.sha }}-debug-apk
+          name: grabhub-debug-apk
           path: androidApp/build/outputs/apk/debug/*.apk
           retention-days: 30
           if-no-files-found: error
+
+      - name: Note where to download the APK
+        run: |
+          {
+            echo "### Debug APK ready"
+            echo "Download artifact **grabhub-debug-apk** in the **Artifacts** section at the bottom of this workflow run page."
+            echo "Unzip and install: \`adb install androidApp-debug.apk\`"
+          } >> "$GITHUB_STEP_SUMMARY"
