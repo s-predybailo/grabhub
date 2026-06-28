@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.kotlinMultiplatform)
@@ -58,6 +60,7 @@ android {
         versionName = "0.4.1"
 
         val thingiverseToken = project.findProperty("THINGIVERSE_ACCESS_TOKEN") as String?
+            ?: readLocalProperty("THINGIVERSE_ACCESS_TOKEN")
             ?: System.getenv("THINGIVERSE_ACCESS_TOKEN")
             ?: ""
         buildConfigField("String", "THINGIVERSE_ACCESS_TOKEN", "\"$thingiverseToken\"")
@@ -82,4 +85,10 @@ android {
 
 dependencies {
     debugImplementation(compose.uiTooling)
+}
+
+private fun readLocalProperty(key: String): String? {
+    val file = rootProject.file("local.properties")
+    if (!file.exists()) return null
+    return Properties().apply { file.inputStream().use(::load) }.getProperty(key)
 }
