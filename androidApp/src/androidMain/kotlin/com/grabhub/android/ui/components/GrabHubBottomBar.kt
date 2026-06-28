@@ -1,9 +1,10 @@
 package com.grabhub.android.ui.components
 
+import android.os.Build
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,14 +17,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,8 +30,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.BlurEffect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TileMode
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -40,12 +41,20 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.grabhub.android.R
+import com.grabhub.android.ui.theme.NavGlassBorder
+import com.grabhub.android.ui.theme.NavGlassSurface
+import com.grabhub.android.ui.theme.NavInactive
+import com.grabhub.android.ui.theme.NavViolet
 
-/** Visible tab row height — matches common Figma bottom-nav templates. */
-val GrabHubBottomNavHeight = 56.dp
-
-private val NavIndicatorWidth = 32.dp
+private val NavBarBodyHeight = 64.dp
+private val NavBarOuterPadding = 12.dp
+private val NavBarHorizontalPadding = 16.dp
+private val NavBarCornerRadius = 28.dp
+private val NavIndicatorWidth = 28.dp
 private val NavIndicatorHeight = 3.dp
+
+/** Total clearance for content above the floating nav (margins + bar body). */
+val GrabHubBottomNavHeight = NavBarBodyHeight + NavBarOuterPadding * 2
 
 data class BottomNavItem(
     val routeKey: String,
@@ -54,19 +63,19 @@ data class BottomNavItem(
 )
 
 val GrabHubBottomNavItems = listOf(
-    BottomNavItem("favorites", R.string.nav_favorites, Icons.Default.Favorite),
-    BottomNavItem("home", R.string.nav_home, Icons.Default.Home),
-    BottomNavItem("search", R.string.nav_search, Icons.Default.Search),
-    BottomNavItem("history", R.string.nav_history, Icons.Default.History),
-    BottomNavItem("settings", R.string.nav_settings, Icons.Default.Settings),
+    BottomNavItem("favorites", R.string.nav_favorites, Icons.Outlined.FavoriteBorder),
+    BottomNavItem("home", R.string.nav_home, Icons.Outlined.Home),
+    BottomNavItem("search", R.string.nav_search, Icons.Outlined.Search),
+    BottomNavItem("history", R.string.nav_history, Icons.Outlined.History),
+    BottomNavItem("settings", R.string.nav_settings, Icons.Outlined.Settings),
 )
 
 /** @deprecated Use [GrabHubBottomNavItems] */
 val GrabHubSideNavItems = GrabHubBottomNavItems.filter { it.routeKey != "search" }
 
 /**
- * Bottom navigation in the style of the Figma "Mobile Navigation Menu Bar UI Template":
- * full-width docked bar, subtle top divider, equal-width tabs, active underline indicator.
+ * Floating glass-style bottom navigation: pill bar with margins, outlined icons,
+ * violet active state, and underline indicator — per GrabHub UI mockup.
  */
 @Composable
 fun GrabHubBottomNavBar(
@@ -74,47 +83,68 @@ fun GrabHubBottomNavBar(
     onItemSelected: (BottomNavItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface)
-            .navigationBarsPadding(),
-    ) {
-        HorizontalDivider(
-            thickness = 1.dp,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
-        )
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(GrabHubBottomNavHeight),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            GrabHubBottomNavItems.forEach { item ->
-                NavBarItem(
-                    item = item,
-                    selected = selectedRouteKey == item.routeKey,
-                    onClick = { onItemSelected(item) },
-                    modifier = Modifier.weight(1f),
-                )
-            }
-        }
-    }
+    GrabHubFloatingNavBar(
+        selectedRouteKey = selectedRouteKey,
+        onItemSelected = onItemSelected,
+        modifier = modifier,
+    )
 }
 
-/** Alias kept for existing call sites. */
 @Composable
 fun GrabHubFloatingNavBar(
     selectedRouteKey: String,
     onItemSelected: (BottomNavItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    GrabHubBottomNavBar(
-        selectedRouteKey = selectedRouteKey,
-        onItemSelected = onItemSelected,
-        modifier = modifier,
-    )
+    val barShape = RoundedCornerShape(NavBarCornerRadius)
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .padding(
+                horizontal = NavBarHorizontalPadding,
+                vertical = NavBarOuterPadding,
+            ),
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(barShape)
+                .graphicsLayer {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        renderEffect = BlurEffect(
+                            radiusX = 18f,
+                            radiusY = 18f,
+                            edgeTreatment = TileMode.Clamp,
+                        )
+                    }
+                }
+                .border(width = 1.dp, color = NavGlassBorder, shape = barShape),
+            shape = barShape,
+            color = NavGlassSurface,
+            shadowElevation = 10.dp,
+            tonalElevation = 0.dp,
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(NavBarBodyHeight)
+                    .padding(horizontal = 4.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                GrabHubBottomNavItems.forEach { item ->
+                    NavBarItem(
+                        item = item,
+                        selected = selectedRouteKey == item.routeKey,
+                        onClick = { onItemSelected(item) },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -124,17 +154,12 @@ private fun NavBarItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val activeColor = MaterialTheme.colorScheme.primary
-    val inactiveColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f)
+    val activeColor = NavViolet
+    val inactiveColor = NavInactive
     val indicatorWidth by animateDpAsState(
         targetValue = if (selected) NavIndicatorWidth else 0.dp,
         animationSpec = spring(stiffness = 420f, dampingRatio = 0.78f),
         label = "navIndicatorWidth",
-    )
-    val iconScale by animateFloatAsState(
-        targetValue = if (selected) 1.08f else 1f,
-        animationSpec = spring(stiffness = 500f),
-        label = "navIconScale",
     )
 
     Surface(
@@ -145,23 +170,21 @@ private fun NavBarItem(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 6.dp, bottom = 4.dp),
+                .padding(vertical = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(2.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Icon(
                 imageVector = item.icon,
                 contentDescription = stringResource(item.labelRes),
-                modifier = Modifier
-                    .size(22.dp)
-                    .scale(iconScale),
+                modifier = Modifier.size(24.dp),
                 tint = if (selected) activeColor else inactiveColor,
             )
             Text(
                 text = stringResource(item.labelRes),
-                fontSize = 11.sp,
-                lineHeight = 13.sp,
-                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                fontSize = 12.sp,
+                lineHeight = 14.sp,
+                fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
                 color = if (selected) activeColor else inactiveColor,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
