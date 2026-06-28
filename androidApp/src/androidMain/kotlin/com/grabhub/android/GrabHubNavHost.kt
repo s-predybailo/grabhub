@@ -19,6 +19,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.grabhub.android.ui.GrabHubTheme
 import com.grabhub.android.ui.components.BottomNavItem
+import com.grabhub.android.ui.components.GrabHubBottomNavHeight
 import com.grabhub.android.ui.components.GrabHubFloatingNavBar
 import com.grabhub.android.ui.detail.DetailScreen
 import com.grabhub.android.ui.favorites.FavoritesScreen
@@ -32,7 +33,7 @@ import com.grabhub.domain.SortOrder
 import java.net.URLDecoder
 import java.net.URLEncoder
 
-private val BottomNavClearance = 84.dp
+private val BottomNavClearance = GrabHubBottomNavHeight + 1.dp
 
 private object Routes {
     const val HOME = "home"
