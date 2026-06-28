@@ -32,14 +32,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.ChatBubbleOutline
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Fullscreen
+import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Link
-import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.ThumbUp
@@ -81,6 +82,8 @@ import com.grabhub.android.ui.components.SourceBadge
 import com.grabhub.android.ui.theme.GrabHubShapes
 import com.grabhub.domain.ModelDetail
 import com.grabhub.domain.carouselImages
+import com.grabhub.util.ModelDetailSection
+import com.grabhub.util.externalUrl
 import com.grabhub.util.formatCount
 import org.koin.androidx.compose.koinViewModel
 
@@ -319,7 +322,19 @@ private fun DetailContent(
                         onOpen = { onOpenUrl(item.modelUrl) },
                     )
 
-                    DetailStatsPills(detail = detail)
+                    DetailStatsPills(
+                        detail = detail,
+                        onOpenSection = { section ->
+                            onOpenUrl(detail.externalUrl(section))
+                        },
+                    )
+
+                    DetailSectionLinks(
+                        detail = detail,
+                        onOpenSection = { section ->
+                            onOpenUrl(detail.externalUrl(section))
+                        },
+                    )
 
                     detail.description?.let { description ->
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -393,6 +408,20 @@ private fun DetailContent(
             onShare = { onShare(item.title, item.modelUrl) },
             onToggleFavorite = onToggleFavorite,
             onOpen = { onOpenUrl(item.modelUrl) },
+            onOpenComments = {
+                if (detail.commentCount != null && detail.commentCount!! > 0) {
+                    onOpenUrl(detail.externalUrl(ModelDetailSection.COMMENTS))
+                } else {
+                    onOpenUrl(item.modelUrl)
+                }
+            },
+            onOpenFiles = {
+                if (detail.fileCount != null && detail.fileCount!! > 0) {
+                    onOpenUrl(detail.externalUrl(ModelDetailSection.FILES))
+                } else {
+                    onOpenUrl(item.modelUrl)
+                }
+            },
             onGallery = { onImageClick(currentImagePage) },
         )
     }
@@ -435,7 +464,7 @@ private fun DetailAuthorRow(
             )
         }
         Button(onClick = onOpen, shape = RoundedCornerShape(999.dp)) {
-            Icon(Icons.Default.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
+            Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
             Spacer(modifier = Modifier.width(6.dp))
             Text(stringResource(R.string.detail_open))
         }
@@ -443,7 +472,10 @@ private fun DetailAuthorRow(
 }
 
 @Composable
-private fun DetailStatsPills(detail: ModelDetail) {
+private fun DetailStatsPills(
+    detail: ModelDetail,
+    onOpenSection: (ModelDetailSection) -> Unit,
+) {
     val item = detail.item
     val likesLabel = stringResource(R.string.stat_likes)
     val downloadsLabel = stringResource(R.string.stat_downloads)
@@ -452,13 +484,32 @@ private fun DetailStatsPills(detail: ModelDetail) {
     val viewsLabel = stringResource(R.string.stat_views)
     val filesLabel = stringResource(R.string.stat_files)
 
+    data class StatEntry(
+        val icon: ImageVector,
+        val value: String,
+        val label: String,
+        val section: ModelDetailSection,
+    )
+
     val stats = buildList {
-        item.likes?.let { add(Triple(Icons.Default.ThumbUp, formatCount(it) ?: it.toString(), likesLabel)) }
-        item.downloads?.let { add(Triple(Icons.Default.Download, formatCount(it) ?: it.toString(), downloadsLabel)) }
-        detail.commentCount?.let { add(Triple(Icons.Default.ChatBubbleOutline, formatCount(it) ?: it.toString(), commentsLabel)) }
-        detail.makeCount?.let { add(Triple(Icons.Default.Print, formatCount(it) ?: it.toString(), makesLabel)) }
-        detail.viewCount?.let { add(Triple(Icons.Default.Visibility, formatCount(it) ?: it.toString(), viewsLabel)) }
-        detail.fileCount?.let { add(Triple(Icons.Default.FolderOpen, it.toString(), filesLabel)) }
+        item.likes?.let {
+            add(StatEntry(Icons.Default.ThumbUp, formatCount(it) ?: it.toString(), likesLabel, ModelDetailSection.MODEL))
+        }
+        item.downloads?.let {
+            add(StatEntry(Icons.Default.Download, formatCount(it) ?: it.toString(), downloadsLabel, ModelDetailSection.FILES))
+        }
+        detail.commentCount?.let {
+            add(StatEntry(Icons.Default.ChatBubbleOutline, formatCount(it) ?: it.toString(), commentsLabel, ModelDetailSection.COMMENTS))
+        }
+        detail.makeCount?.let {
+            add(StatEntry(Icons.Default.Print, formatCount(it) ?: it.toString(), makesLabel, ModelDetailSection.MAKES))
+        }
+        detail.viewCount?.let {
+            add(StatEntry(Icons.Default.Visibility, formatCount(it) ?: it.toString(), viewsLabel, ModelDetailSection.MODEL))
+        }
+        detail.fileCount?.let {
+            add(StatEntry(Icons.Default.FolderOpen, it.toString(), filesLabel, ModelDetailSection.FILES))
+        }
     }
 
     if (stats.isEmpty()) {
@@ -474,8 +525,83 @@ private fun DetailStatsPills(detail: ModelDetail) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         SourceBadge(source = item.source)
-        stats.forEach { (icon, value, label) ->
-            DetailStatPill(icon = icon, value = value, label = label)
+        stats.forEach { entry ->
+            DetailStatPill(
+                icon = entry.icon,
+                value = entry.value,
+                label = entry.label,
+                onClick = { onOpenSection(entry.section) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun DetailSectionLinks(
+    detail: ModelDetail,
+    onOpenSection: (ModelDetailSection) -> Unit,
+) {
+    val sections = buildList {
+        detail.commentCount?.takeIf { it > 0 }?.let { count ->
+            add(Triple(R.string.detail_section_comments, formatCount(count) ?: count.toString(), ModelDetailSection.COMMENTS))
+        }
+        detail.makeCount?.takeIf { it > 0 }?.let { count ->
+            add(Triple(R.string.detail_section_makes, formatCount(count) ?: count.toString(), ModelDetailSection.MAKES))
+        }
+        detail.fileCount?.takeIf { it > 0 }?.let { count ->
+            add(Triple(R.string.detail_section_files, count.toString(), ModelDetailSection.FILES))
+        }
+        detail.item.downloads?.takeIf { it > 0 }?.let { count ->
+            add(Triple(R.string.detail_section_downloads, formatCount(count) ?: count.toString(), ModelDetailSection.FILES))
+        }
+    }
+
+    if (sections.isEmpty()) return
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(stringResource(R.string.detail_sections), style = MaterialTheme.typography.titleMedium)
+        sections.forEach { (titleRes, count, section) ->
+            DetailSectionRow(
+                title = stringResource(titleRes),
+                subtitle = stringResource(R.string.detail_section_open_on_site, count),
+                onClick = { onOpenSection(section) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun DetailSectionRow(
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit,
+) {
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = GrabHubShapes.medium,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.titleSmall)
+                Text(
+                    subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Icon(
+                imageVector = Icons.Default.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
@@ -485,8 +611,10 @@ private fun DetailStatPill(
     icon: ImageVector,
     value: String,
     label: String,
+    onClick: () -> Unit,
 ) {
     Surface(
+        onClick = onClick,
         shape = RoundedCornerShape(999.dp),
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         tonalElevation = 1.dp,
@@ -525,6 +653,8 @@ private fun DetailBottomBar(
     onShare: () -> Unit,
     onToggleFavorite: () -> Unit,
     onOpen: () -> Unit,
+    onOpenComments: () -> Unit,
+    onOpenFiles: () -> Unit,
     onGallery: () -> Unit,
 ) {
     val favoriteTint by animateColorAsState(
@@ -559,6 +689,9 @@ private fun DetailBottomBar(
                     tint = favoriteTint,
                 )
             }
+            IconButton(onClick = onOpenComments) {
+                Icon(Icons.Default.ChatBubbleOutline, contentDescription = stringResource(R.string.stat_comments))
+            }
             if (imageCounter != null && hasGallery) {
                 Text(
                     text = imageCounter,
@@ -566,8 +699,11 @@ private fun DetailBottomBar(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+            IconButton(onClick = onOpenFiles) {
+                Icon(Icons.Default.FolderOpen, contentDescription = stringResource(R.string.stat_files))
+            }
             IconButton(onClick = onOpen) {
-                Icon(Icons.Default.OpenInNew, contentDescription = stringResource(R.string.detail_open))
+                Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = stringResource(R.string.detail_open))
             }
             if (hasGallery) {
                 IconButton(onClick = onGallery) {

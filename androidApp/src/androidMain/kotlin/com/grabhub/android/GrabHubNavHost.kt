@@ -32,7 +32,7 @@ import com.grabhub.domain.SortOrder
 import java.net.URLDecoder
 import java.net.URLEncoder
 
-private val BottomNavClearance = 112.dp
+private val BottomNavClearance = 88.dp
 
 private object Routes {
     const val HOME = "home"

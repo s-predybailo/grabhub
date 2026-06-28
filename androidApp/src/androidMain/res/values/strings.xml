@@ -103,6 +103,12 @@
     <string name="stat_price">Price</string>
     <string name="detail_share">Share</string>
     <string name="detail_unknown_author">Unknown author</string>
+    <string name="detail_sections">Sections</string>
+    <string name="detail_section_comments">Comments</string>
+    <string name="detail_section_makes">Makes</string>
+    <string name="detail_section_files">Files</string>
+    <string name="detail_section_downloads">Downloads</string>
+    <string name="detail_section_open_on_site">View on site · %1$s</string>
 
     <!-- Home -->
     <string name="home_subtitle">Discover 3D models · v%1$s</string>

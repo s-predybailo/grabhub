@@ -103,6 +103,12 @@
     <string name="stat_price">Цена</string>
     <string name="detail_share">Поделиться</string>
     <string name="detail_unknown_author">Автор неизвестен</string>
+    <string name="detail_sections">Разделы</string>
+    <string name="detail_section_comments">Комментарии</string>
+    <string name="detail_section_makes">Сборки</string>
+    <string name="detail_section_files">Файлы</string>
+    <string name="detail_section_downloads">Скачивания</string>
+    <string name="detail_section_open_on_site">Открыть на сайте · %1$s</string>
 
     <!-- Home -->
     <string name="home_subtitle">3D-модели · v%1$s</string>
