@@ -25,6 +25,7 @@ data class ModelItem(
     val tags: List<String>? = null,
     val isFree: Boolean? = null,
     val price: Double? = null,
+    val license: String? = null,
 )
 
 @Serializable
@@ -32,6 +33,7 @@ data class SearchQuery(
     val text: String,
     val page: Int = 1,
     val pageSize: Int = 20,
+    val filters: SearchFilters = SearchFilters(),
 )
 
 @Serializable

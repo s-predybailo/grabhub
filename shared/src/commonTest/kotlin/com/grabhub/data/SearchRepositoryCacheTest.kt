@@ -18,12 +18,26 @@ class SearchRepositoryCacheTest {
     fun returnsCachedSearchResultOnSecondCall() = runTest {
         val provider = CountingProvider()
         val cache = LocalCache(GrabHubDatabase(createDefaultDatabaseDriverFactory().createDriver()))
-        val repository = SearchRepository(SearchEngine(listOf(provider)), cache)
+        val history = HistoryRepository(cache)
+        val repository = SearchRepository(SearchEngine(listOf(provider)), cache, history)
 
         repository.search(SearchQuery(text = "benchy"))
         repository.search(SearchQuery(text = "benchy"))
 
         assertEquals(1, provider.calls)
+    }
+
+    @Test
+    fun recordsSearchHistory() = runTest {
+        val provider = CountingProvider()
+        val cache = LocalCache(GrabHubDatabase(createDefaultDatabaseDriverFactory().createDriver()))
+        val history = HistoryRepository(cache)
+        val repository = SearchRepository(SearchEngine(listOf(provider)), cache, history)
+
+        repository.search(SearchQuery(text = "dragon"))
+
+        assertEquals(1, history.getHistory().size)
+        assertEquals("dragon", history.getHistory().first().query)
     }
 
     private class CountingProvider : SearchProvider {

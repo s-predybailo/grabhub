@@ -42,7 +42,7 @@ class SearchEngine(
             .flatMap { it.items }
 
         SearchResult(
-            items = ResultDeduplicator.deduplicateAndSort(allItems, query.text),
+            items = SearchResultProcessor.process(allItems, query.text, query.filters),
             errors = errors,
         )
     }

@@ -4,6 +4,8 @@ import com.grabhub.cache.DatabaseDriverFactory
 import com.grabhub.cache.GrabHubDatabase
 import com.grabhub.cache.LocalCache
 import com.grabhub.data.DetailRepository
+import com.grabhub.data.FavoritesRepository
+import com.grabhub.data.HistoryRepository
 import com.grabhub.data.SearchRepository
 import com.grabhub.engine.SearchEngine
 import com.grabhub.network.createHttpClient
@@ -48,6 +50,8 @@ fun sharedModule(
     }
 
     single { SearchEngine(get()) }
-    single { SearchRepository(get(), get()) }
+    single { HistoryRepository(get()) }
+    single { FavoritesRepository(get()) }
+    single { SearchRepository(get(), get(), get()) }
     single { DetailRepository(get(), get()) }
 }

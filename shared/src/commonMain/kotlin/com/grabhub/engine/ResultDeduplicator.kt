@@ -1,23 +1,33 @@
 package com.grabhub.engine
 
 import com.grabhub.domain.ModelItem
+import com.grabhub.domain.SortOrder
 
 internal object ResultDeduplicator {
 
-    fun deduplicateAndSort(items: List<ModelItem>, query: String): List<ModelItem> {
+    fun deduplicateAndSort(items: List<ModelItem>, query: String, sortOrder: SortOrder = SortOrder.RELEVANCE): List<ModelItem> {
         val normalizedQuery = normalize(query)
         val seen = mutableSetOf<String>()
 
+        val comparator = when (sortOrder) {
+            SortOrder.RELEVANCE -> compareByDescending<ModelItem> { scoreItem(it, normalizedQuery) }
+                .thenByDescending { it.downloads ?: 0 }
+                .thenByDescending { it.likes ?: 0 }
+
+            SortOrder.POPULARITY -> compareByDescending<ModelItem> { popularityScore(it) }
+                .thenByDescending { it.downloads ?: 0 }
+                .thenByDescending { it.likes ?: 0 }
+        }
+
         return items
-            .sortedWith(
-                compareByDescending<ModelItem> { scoreItem(it, normalizedQuery) }
-                    .thenByDescending { it.downloads ?: 0 }
-                    .thenByDescending { it.likes ?: 0 },
-            )
+            .sortedWith(comparator)
             .filter { item ->
                 seen.add(dedupKey(item))
             }
     }
+
+    private fun popularityScore(item: ModelItem): Int =
+        (item.downloads ?: 0) + (item.likes ?: 0) * 10
 
     private fun dedupKey(item: ModelItem): String {
         val title = normalize(item.title)

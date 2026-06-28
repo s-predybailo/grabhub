@@ -17,6 +17,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.CircularProgressIndicator
@@ -73,6 +75,14 @@ fun DetailScreen(
                     }
                 },
                 actions = {
+                    if (uiState.detail != null) {
+                        IconButton(onClick = viewModel::toggleFavorite) {
+                            Icon(
+                                imageVector = if (uiState.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                contentDescription = "Toggle favorite",
+                            )
+                        }
+                    }
                     uiState.detail?.item?.modelUrl?.let { url ->
                         IconButton(
                             onClick = {
