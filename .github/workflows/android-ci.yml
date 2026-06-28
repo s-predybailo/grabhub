@@ -9,7 +9,7 @@ on:
 
 concurrency:
   group: android-ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   test-and-build:
@@ -71,8 +71,9 @@ jobs:
           body: |
             Automated debug build from `${{ github.sha }}` on `${{ github.ref_name }}`.
 
-            Install: download `androidApp-debug.apk` and run `adb install androidApp-debug.apk`.
+            Install: download `androidApp-debug.apk` and run `adb install -r androidApp-debug.apk`.
           commit: ${{ github.sha }}
+          name: Debug APK (${{ github.sha }})
           makeLatest: false
           omitBodyDuringUpdate: true
           prerelease: true
