@@ -1,5 +1,6 @@
 package com.grabhub
 
+import com.grabhub.cache.createDefaultDatabaseDriverFactory
 import com.grabhub.data.SearchRepository
 import com.grabhub.di.sharedModule
 import com.grabhub.domain.SearchQuery
@@ -34,7 +35,7 @@ private object KoinHolder {
 
     fun get(thingiverseAccessToken: String) = synchronized(this) {
         if (!started) {
-            startKoin { modules(sharedModule(thingiverseAccessToken)) }
+            startKoin { modules(sharedModule(createDefaultDatabaseDriverFactory(), thingiverseAccessToken)) }
             started = true
         }
         GlobalContext.get()

@@ -42,31 +42,9 @@ class SearchEngine(
             .flatMap { it.items }
 
         SearchResult(
-            items = deduplicateAndSort(allItems, query.text),
+            items = SearchResultProcessor.process(allItems, query.text, query.filters),
             errors = errors,
         )
-    }
-
-    private fun deduplicateAndSort(items: List<ModelItem>, query: String): List<ModelItem> {
-        val normalizedQuery = query.trim().lowercase()
-        val seen = mutableSetOf<String>()
-
-        return items
-            .sortedByDescending { scoreItem(it, normalizedQuery) }
-            .filter { item ->
-                val key = "${item.title.lowercase()}|${item.author?.lowercase() ?: ""}"
-                seen.add(key)
-            }
-    }
-
-    private fun scoreItem(item: ModelItem, query: String): Int {
-        val title = item.title.lowercase()
-        var score = 0
-        if (title == query) score += 100
-        if (title.contains(query)) score += 50
-        score += (item.likes ?: 0) / 100
-        score += (item.downloads ?: 0) / 1000
-        return score
     }
 
     private sealed interface ProviderOutcome {

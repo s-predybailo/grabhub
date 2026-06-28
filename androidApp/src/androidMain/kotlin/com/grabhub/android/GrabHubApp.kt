@@ -1,7 +1,9 @@
 package com.grabhub.android
 
 import android.app.Application
+import com.grabhub.android.BuildConfig
 import com.grabhub.android.di.androidModule
+import com.grabhub.cache.DatabaseDriverFactory
 import com.grabhub.di.sharedModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
@@ -12,7 +14,10 @@ class GrabHubApp : Application() {
         startKoin {
             androidContext(this@GrabHubApp)
             modules(
-                sharedModule(thingiverseAccessToken = BuildConfig.THINGIVERSE_ACCESS_TOKEN),
+                sharedModule(
+                    databaseDriverFactory = DatabaseDriverFactory(androidContext()),
+                    thingiverseAccessToken = BuildConfig.THINGIVERSE_ACCESS_TOKEN,
+                ),
                 androidModule,
             )
         }

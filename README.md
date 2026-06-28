@@ -14,6 +14,28 @@ Cross-platform 3D model search aggregator built with Kotlin Multiplatform.
 - API-based providers (GraphQL / REST), no HTML parsing
 - Paginated provider interface (UI shows first page in MVP)
 
+## Phase 2
+
+- [MakerWorld](https://makerworld.com) provider (Bambu Lab search API)
+- [Creality Cloud](https://www.crealitycloud.com) provider (smart search API)
+- SQLDelight search/model cache (15 min TTL)
+- Improved deduplication (normalized title + author)
+- Android detail screen with navigation
+
+## Phase 3
+
+- Search filters: free / paid, popularity sort, license (commercial / non-commercial)
+- Favorites (SQLDelight, toggle on detail screen)
+- Search history (last 50 queries, tap to re-run)
+- Bottom navigation: Search, Favorites, History
+
+## Releases
+
+| Tag | Contents |
+|-----|----------|
+| v0.1.0 | Phase 1 MVP |
+| v0.3.0 | Phase 2 + Phase 3 (4 providers, cache, detail, filters, favorites, history) |
+
 ## Gitflow
 
 | Branch | Purpose |
