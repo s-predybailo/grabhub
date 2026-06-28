@@ -15,8 +15,6 @@ val Emerald400 = Color(0xFF34D399)
 val Amber400 = Color(0xFFFBBF24)
 val Rose400 = Color(0xFFFB7185)
 val NavViolet = Color(0xFF8B5CF6)
-val NavBarDark = Color(0xFF1E1E1E)
-val NavActiveOrange = Color(0xFFFF6B2B)
 
 val SourcePrintables = Color(0xFF0EA5E9)
 val SourceThingiverse = Color(0xFF22C55E)
