@@ -107,7 +107,7 @@ class ThingiverseProvider(
             modelUrl = modelUrl,
             likes = likeCount,
             downloads = null,
-            tags = tags,
+            tags = tags.toTagNames(),
             isFree = true,
             price = null,
         )
@@ -128,11 +128,22 @@ class ThingiverseProvider(
             modelUrl = modelUrl,
             likes = likeCount,
             downloads = null,
-            tags = tags,
+            tags = tags.toTagNames(),
             isFree = true,
             price = null,
         )
     }
+
+    private fun List<ThingiverseTag>?.toTagNames(): List<String>? =
+        this?.mapNotNull { tag -> tag.name?.takeIf { it.isNotBlank() } ?: tag.tag }
+            ?.distinct()
+            ?.takeIf { it.isNotEmpty() }
+
+    @Serializable
+    private data class ThingiverseTag(
+        val name: String? = null,
+        val tag: String? = null,
+    )
 
     @Serializable
     private data class ThingiverseThing(
@@ -146,7 +157,7 @@ class ThingiverseProvider(
         val likeCount: Int? = null,
         @SerialName("file_count")
         val fileCount: Int? = null,
-        val tags: List<String>? = null,
+        val tags: List<ThingiverseTag>? = null,
         val license: String? = null,
         val creator: ThingiverseCreator? = null,
         @SerialName("default_image")
@@ -186,7 +197,7 @@ class ThingiverseProvider(
         val publicUrl: String? = null,
         @SerialName("like_count")
         val likeCount: Int? = null,
-        val tags: List<String>? = null,
+        val tags: List<ThingiverseTag>? = null,
         val creator: ThingiverseCreator? = null,
     )
 
