@@ -10,7 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.GridView
-import androidx.compose.material.icons.filled.ViewList
+import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -42,7 +42,7 @@ fun ViewModeToggle(
             ViewModeButton(
                 selected = mode == ResultsViewMode.LIST,
                 onClick = { onModeChange(ResultsViewMode.LIST) },
-                icon = { Icon(Icons.Default.ViewList, contentDescription = "List view") },
+                icon = { Icon(Icons.AutoMirrored.Filled.ViewList, contentDescription = "List view") },
             )
         }
     }
