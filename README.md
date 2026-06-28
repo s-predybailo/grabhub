@@ -91,17 +91,27 @@ Every push to `main` / `develop` and every PR runs:
 1. `:shared:jvmTest`
 2. `:androidApp:assembleDebug`
 
-The debug APK is published as a **workflow artifact** named `grabhub-debug-apk`.
+#### Recommended: GitHub Release (easiest download)
 
-**Where to download:** open a green **Android CI** run (not the job log), scroll to the bottom, section **Artifacts**:
+Each successful build on `main` or `develop` updates the pre-release **`debug-latest`**:
 
-- Latest successful `develop` run: https://github.com/s-predybailo/grabhub/actions/workflows/android-ci.yml
+https://github.com/s-predybailo/grabhub/releases/tag/debug-latest
 
-On the run page use the `#artifacts` anchor, for example:
+Download `androidApp-debug.apk` directly from the **Assets** section — no Actions UI needed.
 
-https://github.com/s-predybailo/grabhub/actions/runs/28319825048#artifacts
+#### Alternative: workflow artifact
 
-Failed runs do not publish an APK. After download, install on a device:
+The same APK is also stored as artifact `grabhub-debug-apk` on the workflow run page (section **Artifacts** at the bottom). You must be signed in to GitHub; click **Download** on the artifact row, not the `sha256:` digest.
+
+CLI:
+
+```bash
+gh release download debug-latest -p '*.apk' -R s-predybailo/grabhub
+# or
+gh run download -R s-predybailo/grabhub -n grabhub-debug-apk
+```
+
+Install on device:
 
 ```bash
 adb install androidApp-debug.apk

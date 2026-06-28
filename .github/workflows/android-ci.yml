@@ -15,7 +15,7 @@ jobs:
   test-and-build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
 
     steps:
       - name: Checkout
@@ -58,3 +58,23 @@ jobs:
             echo "Download artifact **grabhub-debug-apk** in the **Artifacts** section at the bottom of this workflow run page."
             echo "Unzip and install: \`adb install androidApp-debug.apk\`"
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publish debug APK to GitHub Release
+        if: github.event_name != 'pull_request'
+        uses: ncipollo/release-action@v1
+        with:
+          allowUpdates: true
+          replacesArtifacts: true
+          artifactErrorsFailBuild: true
+          artifacts: androidApp/build/outputs/apk/debug/*.apk
+          artifactContentType: application/vnd.android.package-archive
+          body: |
+            Automated debug build from `${{ github.sha }}` on `${{ github.ref_name }}`.
+
+            Install: download `androidApp-debug.apk` and run `adb install androidApp-debug.apk`.
+          commit: ${{ github.sha }}
+          makeLatest: false
+          omitBodyDuringUpdate: true
+          prerelease: true
+          tag: debug-latest
+          token: ${{ secrets.GITHUB_TOKEN }}
