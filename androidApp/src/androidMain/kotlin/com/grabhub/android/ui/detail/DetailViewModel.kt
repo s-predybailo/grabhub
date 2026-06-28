@@ -3,6 +3,7 @@ package com.grabhub.android.ui.detail
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.grabhub.data.DetailRepository
+import com.grabhub.data.FavoritesRepository
 import com.grabhub.domain.ModelDetail
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -13,11 +14,13 @@ import kotlinx.coroutines.launch
 data class DetailUiState(
     val isLoading: Boolean = true,
     val detail: ModelDetail? = null,
+    val isFavorite: Boolean = false,
     val error: String? = null,
 )
 
 class DetailViewModel(
     private val detailRepository: DetailRepository,
+    private val favoritesRepository: FavoritesRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DetailUiState())
@@ -32,6 +35,7 @@ class DetailViewModel(
                         DetailUiState(
                             isLoading = false,
                             detail = detail,
+                            isFavorite = favoritesRepository.isFavorite(modelId),
                             error = if (detail == null) "Model not found" else null,
                         )
                     }
@@ -45,5 +49,11 @@ class DetailViewModel(
                     }
                 }
         }
+    }
+
+    fun toggleFavorite() {
+        val detail = _uiState.value.detail ?: return
+        val isFavorite = favoritesRepository.toggleFavorite(detail.item)
+        _uiState.update { it.copy(isFavorite = isFavorite) }
     }
 }

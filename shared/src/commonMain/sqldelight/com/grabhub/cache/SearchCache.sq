@@ -35,3 +35,55 @@ WHERE created_at < ?;
 deleteExpiredModelCache:
 DELETE FROM model_cache
 WHERE created_at < ?;
+
+CREATE TABLE favorite (
+    id TEXT NOT NULL PRIMARY KEY,
+    payload TEXT NOT NULL,
+    added_at INTEGER NOT NULL
+);
+
+CREATE TABLE search_history (
+    query TEXT NOT NULL PRIMARY KEY,
+    filters_payload TEXT NOT NULL,
+    searched_at INTEGER NOT NULL
+);
+
+getAllFavorites:
+SELECT payload, added_at
+FROM favorite
+ORDER BY added_at DESC;
+
+getFavorite:
+SELECT payload, added_at
+FROM favorite
+WHERE id = ?;
+
+upsertFavorite:
+INSERT OR REPLACE INTO favorite(id, payload, added_at)
+VALUES (?, ?, ?);
+
+deleteFavorite:
+DELETE FROM favorite
+WHERE id = ?;
+
+isFavorite:
+SELECT COUNT(*)
+FROM favorite
+WHERE id = ?;
+
+getSearchHistory:
+SELECT query, filters_payload, searched_at
+FROM search_history
+ORDER BY searched_at DESC
+LIMIT ?;
+
+upsertSearchHistory:
+INSERT OR REPLACE INTO search_history(query, filters_payload, searched_at)
+VALUES (?, ?, ?);
+
+deleteSearchHistory:
+DELETE FROM search_history
+WHERE query = ?;
+
+clearSearchHistory:
+DELETE FROM search_history;

@@ -92,6 +92,7 @@ class MakerWorldProvider(
             tags = tags,
             isFree = !isPointRedeemable,
             price = null,
+            license = license,
         )
     }
 

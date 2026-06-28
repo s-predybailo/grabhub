@@ -1,6 +1,6 @@
 package com.grabhub.android.ui.search
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,16 +11,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -33,27 +32,30 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil3.compose.AsyncImage
-import com.grabhub.domain.ModelItem
-import com.grabhub.domain.SourceType
+import com.grabhub.android.ui.components.ModelItemCard
+import com.grabhub.domain.LicenseFilter
+import com.grabhub.domain.PriceFilter
+import com.grabhub.domain.SortOrder
 import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(
     onModelClick: (String) -> Unit,
+    prefilledQuery: String? = null,
     viewModel: SearchViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    androidx.compose.runtime.LaunchedEffect(prefilledQuery) {
+        prefilledQuery?.let { viewModel.search(it) }
+    }
+
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("GrabHub") })
+            TopAppBar(title = { Text("Search") })
         },
     ) { padding ->
         Column(
@@ -73,10 +75,19 @@ fun SearchScreen(
                     placeholder = { Text("Search 3D models…") },
                     singleLine = true,
                 )
-                IconButton(onClick = viewModel::search) {
+                IconButton(onClick = { viewModel.search() }) {
                     Icon(Icons.Default.Search, contentDescription = "Search")
                 }
             }
+
+            SearchFiltersRow(
+                priceFilter = uiState.filters.priceFilter,
+                sortOrder = uiState.filters.sortOrder,
+                licenseFilter = uiState.filters.licenseFilter,
+                onPriceFilter = viewModel::setPriceFilter,
+                onSortOrder = viewModel::setSortOrder,
+                onLicenseFilter = viewModel::setLicenseFilter,
+            )
 
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -129,16 +140,53 @@ fun SearchScreen(
 }
 
 @Composable
+private fun SearchFiltersRow(
+    priceFilter: PriceFilter,
+    sortOrder: SortOrder,
+    licenseFilter: LicenseFilter,
+    onPriceFilter: (PriceFilter) -> Unit,
+    onSortOrder: (SortOrder) -> Unit,
+    onLicenseFilter: (LicenseFilter) -> Unit,
+) {
+    Column(modifier = Modifier.padding(top = 8.dp)) {
+        Text("Price", style = MaterialTheme.typography.labelMedium)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            FilterChip(selected = priceFilter == PriceFilter.ALL, onClick = { onPriceFilter(PriceFilter.ALL) }, label = { Text("All") })
+            FilterChip(selected = priceFilter == PriceFilter.FREE_ONLY, onClick = { onPriceFilter(PriceFilter.FREE_ONLY) }, label = { Text("Free") })
+            FilterChip(selected = priceFilter == PriceFilter.PAID_ONLY, onClick = { onPriceFilter(PriceFilter.PAID_ONLY) }, label = { Text("Paid") })
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Text("Sort", style = MaterialTheme.typography.labelMedium)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FilterChip(selected = sortOrder == SortOrder.RELEVANCE, onClick = { onSortOrder(SortOrder.RELEVANCE) }, label = { Text("Relevance") })
+            FilterChip(selected = sortOrder == SortOrder.POPULARITY, onClick = { onSortOrder(SortOrder.POPULARITY) }, label = { Text("Popular") })
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Text("License", style = MaterialTheme.typography.labelMedium)
+        Row(
+            modifier = Modifier.horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            FilterChip(selected = licenseFilter == LicenseFilter.ALL, onClick = { onLicenseFilter(LicenseFilter.ALL) }, label = { Text("All") })
+            FilterChip(selected = licenseFilter == LicenseFilter.COMMERCIAL_OK, onClick = { onLicenseFilter(LicenseFilter.COMMERCIAL_OK) }, label = { Text("Commercial OK") })
+            FilterChip(selected = licenseFilter == LicenseFilter.NON_COMMERCIAL, onClick = { onLicenseFilter(LicenseFilter.NON_COMMERCIAL) }, label = { Text("Non-commercial") })
+        }
+    }
+}
+
+@Composable
 private fun ProviderErrorsBanner(errors: List<com.grabhub.domain.ProviderError>) {
     Surface(
         color = MaterialTheme.colorScheme.errorContainer,
         shape = RoundedCornerShape(8.dp),
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
-            Text(
-                text = "Some sources failed:",
-                style = MaterialTheme.typography.labelLarge,
-            )
+            Text(text = "Some sources failed:", style = MaterialTheme.typography.labelLarge)
             errors.forEach { error ->
                 Text(
                     text = "${error.source.name}: ${error.message}",
@@ -146,75 +194,5 @@ private fun ProviderErrorsBanner(errors: List<com.grabhub.domain.ProviderError>)
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun ModelItemCard(
-    item: ModelItem,
-    onClick: () -> Unit,
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-    ) {
-        Row(modifier = Modifier.padding(12.dp)) {
-            AsyncImage(
-                model = item.imageUrl,
-                contentDescription = item.title,
-                modifier = Modifier
-                    .size(72.dp)
-                    .clip(RoundedCornerShape(8.dp)),
-                contentScale = ContentScale.Crop,
-            )
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = item.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                item.author?.let { author ->
-                    Text(
-                        text = author,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    SourceBadge(source = item.source)
-                    item.likes?.let { likes ->
-                        Text("♥ $likes", style = MaterialTheme.typography.labelSmall)
-                    }
-                    item.downloads?.let { downloads ->
-                        Text("↓ $downloads", style = MaterialTheme.typography.labelSmall)
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun SourceBadge(source: SourceType) {
-    val label = when (source) {
-        SourceType.PRINTABLES -> "Printables"
-        SourceType.THINGIVERSE -> "Thingiverse"
-        SourceType.MAKERWORLD -> "MakerWorld"
-        SourceType.CREALITY_CLOUD -> "Creality"
-    }
-    Surface(
-        color = MaterialTheme.colorScheme.secondaryContainer,
-        shape = RoundedCornerShape(4.dp),
-    ) {
-        Text(
-            text = label,
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-            style = MaterialTheme.typography.labelSmall,
-        )
     }
 }
