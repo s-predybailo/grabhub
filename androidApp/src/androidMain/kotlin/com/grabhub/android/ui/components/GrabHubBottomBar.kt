@@ -1,51 +1,55 @@
 package com.grabhub.android.ui.components
 
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.grabhub.android.R
+import com.grabhub.android.ui.theme.NavActiveOrange
+import com.grabhub.android.ui.theme.NavBarDark
 
-/** Visible tab row height — matches common Figma bottom-nav templates. */
-val GrabHubBottomNavHeight = 56.dp
+private val NavBarHorizontalMargin = 20.dp
+private val NavBarCornerRadius = 26.dp
+private val NavBubbleSize = 48.dp
+private val NavBarBodyHeight = 56.dp
+private val NavBubbleRise = NavBubbleSize / 2
+private val NavIconSize = 22.dp
 
-private val NavIndicatorWidth = 32.dp
-private val NavIndicatorHeight = 3.dp
+/** Total visible height above the system navigation inset (bubble half + bar body). */
+val GrabHubBottomNavHeight = NavBarBodyHeight + NavBubbleRise
 
 data class BottomNavItem(
     val routeKey: String,
@@ -65,8 +69,8 @@ val GrabHubBottomNavItems = listOf(
 val GrabHubSideNavItems = GrabHubBottomNavItems.filter { it.routeKey != "search" }
 
 /**
- * Bottom navigation in the style of the Figma "Mobile Navigation Menu Bar UI Template":
- * full-width docked bar, subtle top divider, equal-width tabs, active underline indicator.
+ * Animated bottom navigation with a sliding concave dip and floating active bubble,
+ * inspired by curved mobile nav bar references.
  */
 @Composable
 fun GrabHubBottomNavBar(
@@ -74,28 +78,62 @@ fun GrabHubBottomNavBar(
     onItemSelected: (BottomNavItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
+    val selectedIndex = GrabHubBottomNavItems.indexOfFirst { it.routeKey == selectedRouteKey }
+        .coerceAtLeast(0)
+    val animatedIndex by animateFloatAsState(
+        targetValue = selectedIndex.toFloat(),
+        animationSpec = spring(stiffness = 380f, dampingRatio = 0.72f),
+        label = "navActiveIndex",
+    )
+
+    BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface)
-            .navigationBarsPadding(),
+            .navigationBarsPadding()
+            .padding(horizontal = NavBarHorizontalMargin)
+            .height(GrabHubBottomNavHeight),
     ) {
-        HorizontalDivider(
-            thickness = 1.dp,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
-        )
+        val density = LocalDensity.current
+        val barWidthPx = with(density) { maxWidth.toPx() }
+        val bubbleRisePx = with(density) { NavBubbleRise.toPx() }
+        val barBodyHeightPx = with(density) { NavBarBodyHeight.toPx() }
+        val cornerRadiusPx = with(density) { NavBarCornerRadius.toPx() }
+        val bubbleRadiusPx = with(density) { (NavBubbleSize / 2).toPx() }
+        val tabWidthPx = barWidthPx / GrabHubBottomNavItems.size
+        val bubbleCenterX = tabWidthPx * (animatedIndex + 0.5f)
+        val bubbleCenterY = bubbleRisePx
+
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val barTop = bubbleRisePx
+            val barPath = createCurvedBarPath(
+                width = barWidthPx,
+                barTop = barTop,
+                barHeight = barBodyHeightPx,
+                cornerRadius = cornerRadiusPx,
+                dipCenterX = bubbleCenterX,
+                dipRadius = bubbleRadiusPx,
+            )
+            drawPath(barPath, NavBarDark)
+
+            drawCircle(
+                color = NavActiveOrange,
+                radius = bubbleRadiusPx,
+                center = Offset(bubbleCenterX, bubbleCenterY),
+            )
+        }
+
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(GrabHubBottomNavHeight),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxSize(),
+            verticalAlignment = Alignment.Top,
         ) {
             GrabHubBottomNavItems.forEach { item ->
+                val selected = selectedRouteKey == item.routeKey
                 NavBarItem(
                     item = item,
-                    selected = selectedRouteKey == item.routeKey,
+                    selected = selected,
                     onClick = { onItemSelected(item) },
+                    inactiveIconTop = NavBubbleRise + (NavBarBodyHeight - NavIconSize) / 2,
+                    activeIconTop = NavBubbleRise - NavIconSize / 2,
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -122,57 +160,94 @@ private fun NavBarItem(
     item: BottomNavItem,
     selected: Boolean,
     onClick: () -> Unit,
+    inactiveIconTop: Dp,
+    activeIconTop: Dp,
     modifier: Modifier = Modifier,
 ) {
-    val activeColor = MaterialTheme.colorScheme.primary
-    val inactiveColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f)
-    val indicatorWidth by animateDpAsState(
-        targetValue = if (selected) NavIndicatorWidth else 0.dp,
-        animationSpec = spring(stiffness = 420f, dampingRatio = 0.78f),
-        label = "navIndicatorWidth",
-    )
-    val iconScale by animateFloatAsState(
-        targetValue = if (selected) 1.08f else 1f,
-        animationSpec = spring(stiffness = 500f),
-        label = "navIconScale",
-    )
+    val inactiveColor = Color.White.copy(alpha = 0.55f)
+    val activeColor = Color.White
 
-    Surface(
-        onClick = onClick,
-        modifier = modifier,
-        color = Color.Transparent,
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = ripple(bounded = false, radius = 28.dp),
+                onClick = onClick,
+            ),
+        contentAlignment = Alignment.TopCenter,
     ) {
-        Column(
+        Icon(
+            imageVector = item.icon,
+            contentDescription = stringResource(item.labelRes),
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 6.dp, bottom = 4.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(2.dp),
-        ) {
-            Icon(
-                imageVector = item.icon,
-                contentDescription = stringResource(item.labelRes),
-                modifier = Modifier
-                    .size(22.dp)
-                    .scale(iconScale),
-                tint = if (selected) activeColor else inactiveColor,
-            )
-            Text(
-                text = stringResource(item.labelRes),
-                fontSize = 11.sp,
-                lineHeight = 13.sp,
-                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-                color = if (selected) activeColor else inactiveColor,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Box(
-                modifier = Modifier
-                    .height(NavIndicatorHeight)
-                    .width(indicatorWidth)
-                    .clip(RoundedCornerShape(50))
-                    .background(if (selected) activeColor else Color.Transparent),
-            )
-        }
+                .size(NavIconSize)
+                .offset(y = if (selected) activeIconTop else inactiveIconTop),
+            tint = if (selected) activeColor else inactiveColor,
+        )
+    }
+}
+
+private fun createCurvedBarPath(
+    width: Float,
+    barTop: Float,
+    barHeight: Float,
+    cornerRadius: Float,
+    dipCenterX: Float,
+    dipRadius: Float,
+): Path {
+    val barBottom = barTop + barHeight
+    val dipWidth = dipRadius * 2.4f
+    val dipStart = (dipCenterX - dipWidth / 2f).coerceIn(cornerRadius, width - cornerRadius - dipWidth)
+    val dipEnd = dipStart + dipWidth
+    val dipDepth = dipRadius * 0.72f
+
+    return Path().apply {
+        moveTo(0f, barTop + cornerRadius)
+        arcTo(
+            rect = Rect(0f, barTop, cornerRadius * 2f, barTop + cornerRadius * 2f),
+            startAngleDegrees = 180f,
+            sweepAngleDegrees = 90f,
+            forceMoveTo = false,
+        )
+        lineTo(dipStart, barTop)
+        cubicTo(
+            dipStart + dipWidth * 0.22f,
+            barTop,
+            dipCenterX - dipRadius * 0.55f,
+            barTop + dipDepth,
+            dipCenterX,
+            barTop + dipDepth,
+        )
+        cubicTo(
+            dipCenterX + dipRadius * 0.55f,
+            barTop + dipDepth,
+            dipEnd - dipWidth * 0.22f,
+            barTop,
+            dipEnd,
+            barTop,
+        )
+        lineTo(width - cornerRadius, barTop)
+        arcTo(
+            rect = Rect(width - cornerRadius * 2f, barTop, width, barTop + cornerRadius * 2f),
+            startAngleDegrees = 270f,
+            sweepAngleDegrees = 90f,
+            forceMoveTo = false,
+        )
+        lineTo(width, barBottom - cornerRadius)
+        arcTo(
+            rect = Rect(width - cornerRadius * 2f, barBottom - cornerRadius * 2f, width, barBottom),
+            startAngleDegrees = 0f,
+            sweepAngleDegrees = 90f,
+            forceMoveTo = false,
+        )
+        lineTo(cornerRadius, barBottom)
+        arcTo(
+            rect = Rect(0f, barBottom - cornerRadius * 2f, cornerRadius * 2f, barBottom),
+            startAngleDegrees = 90f,
+            sweepAngleDegrees = 90f,
+            forceMoveTo = false,
+        )
+        close()
     }
 }
