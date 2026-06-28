@@ -65,12 +65,39 @@ THINGIVERSE_ACCESS_TOKEN=your_token_here
 
 Printables works without authentication.
 
+### Thingiverse API token
+
+Thingiverse requires an access token. Register an app at https://www.thingiverse.com/developers and set:
+
+```properties
+# androidApp/local.properties or environment variable
+THINGIVERSE_ACCESS_TOKEN=your_token_here
+```
+
+For CI, add the same value as a GitHub repository secret named `THINGIVERSE_ACCESS_TOKEN`
+(Settings → Secrets and variables → Actions).
+
 ### Build
 
 ```bash
 ./gradlew :androidApp:assembleDebug
 ./gradlew :shared:iosSimulatorArm64Test   # shared logic tests
 ```
+
+### CI (GitHub Actions)
+
+Every push to `main` / `develop` and every PR runs:
+
+1. `:shared:jvmTest`
+2. `:androidApp:assembleDebug`
+
+The debug APK is published as a **workflow artifact** (Actions → latest run → Artifacts → `grabhub-<sha>-debug-apk`). Download and install on a device:
+
+```bash
+adb install androidApp-debug.apk
+```
+
+You can also trigger a build manually: Actions → **Android CI** → **Run workflow**.
 
 ## Architecture
 
