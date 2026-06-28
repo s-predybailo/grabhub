@@ -35,6 +35,7 @@ Cross-platform 3D model search aggregator built with Kotlin Multiplatform.
 |-----|----------|
 | v0.1.0 | Phase 1 MVP |
 | v0.3.0 | Phase 2 + Phase 3 (4 providers, cache, detail, filters, favorites, history) |
+| v0.7.9 | UI overhaul: home screen with shortcuts and discover feed, browse feeds (Popular/Latest/Trending), floating glass bottom nav, detail screen polish, carousel deduplication fix |
 
 ## Gitflow
 
