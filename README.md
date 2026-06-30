@@ -120,6 +120,32 @@ adb install androidApp-debug.apk
 
 You can also trigger a build manually: Actions → **Android CI** → **Run workflow**.
 
+### iOS CI (GitHub Actions)
+
+Every push to `main` / `develop` and every PR also runs **iOS CI** on `macos-15`:
+
+1. `:shared:iosSimulatorArm64Test`
+2. Xcode build of `GrabHub.app` for the iOS Simulator
+
+Download artifacts from the workflow run page:
+
+| Artifact | Contents |
+|----------|----------|
+| `grabhub-ios-simulator-debug` | Zip with `GrabHub.app` for Simulator |
+| `grabhub-shared-ios-simulator-framework` | Kotlin `Shared.framework` used by the app |
+
+Install on a booted simulator:
+
+```bash
+unzip GrabHub-ios-simulator-debug.zip
+xcrun simctl install booted GrabHub.app
+xcrun simctl launch booted com.grabhub.ios
+```
+
+You can trigger a build manually: Actions → **iOS CI** → **Run workflow**.
+
+Note: CI produces **Simulator** builds only (no device `.ipa` / TestFlight) because code signing is not configured in the workflow.
+
 ## Architecture
 
 ```

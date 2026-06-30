@@ -20,7 +20,7 @@ The framework output is at `shared/build/bin/iosSimulatorArm64/debugFramework/Sh
 
 ## Xcode setup
 
-1. Open `iosApp/GrabHub.xcodeproj` in Xcode (create project if not present).
+1. Open `iosApp/GrabHub.xcodeproj` in Xcode.
 2. Add a **Run Script** build phase before Compile Sources:
 
    ```bash
