@@ -1,0 +1,94 @@
+name: iOS CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+concurrency:
+  group: ios-ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build-ios-simulator:
+    runs-on: macos-15
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Run shared iOS simulator tests
+        run: ./gradlew :shared:iosSimulatorArm64Test --no-daemon
+        env:
+          THINGIVERSE_ACCESS_TOKEN: ${{ secrets.THINGIVERSE_ACCESS_TOKEN }}
+
+      - name: Build iOS Simulator app
+        run: |
+          set -euo pipefail
+          DERIVED_DATA="$RUNNER_TEMP/GrabHubDerivedData"
+          xcodebuild \
+            -project iosApp/GrabHub.xcodeproj \
+            -scheme GrabHub \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath "$DERIVED_DATA" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            build
+          APP_PATH="$(find "$DERIVED_DATA" -path '*/Build/Products/Debug-iphonesimulator/GrabHub.app' -type d | head -1)"
+          if [ -z "$APP_PATH" ]; then
+            echo "GrabHub.app not found under $DERIVED_DATA"
+            find "$DERIVED_DATA" -name '*.app' -type d || true
+            exit 1
+          fi
+          echo "APP_PATH=$APP_PATH" >> "$GITHUB_ENV"
+
+      - name: Package iOS Simulator app
+        run: |
+          mkdir -p dist
+          ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" dist/GrabHub-ios-simulator-debug.zip
+
+      - name: Upload iOS Simulator app
+        uses: actions/upload-artifact@v4
+        with:
+          name: grabhub-ios-simulator-debug
+          path: dist/GrabHub-ios-simulator-debug.zip
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Upload Shared.framework
+        uses: actions/upload-artifact@v4
+        with:
+          name: grabhub-shared-ios-simulator-framework
+          path: shared/build/xcode-frameworks/Debug/iphonesimulator/Shared.framework
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Note where to download the iOS app
+        run: |
+          {
+            echo "### iOS Simulator build ready"
+            echo "Download artifact **grabhub-ios-simulator-debug** and unzip \`GrabHub-ios-simulator-debug.zip\`."
+            echo ""
+            echo "Install on a booted simulator:"
+            echo "\`\`\`bash"
+            echo "unzip GrabHub-ios-simulator-debug.zip"
+            echo "xcrun simctl install booted GrabHub.app"
+            echo "xcrun simctl launch booted com.grabhub.ios"
+            echo "\`\`\`"
+            echo ""
+            echo "The Kotlin **Shared.framework** is also available as **grabhub-shared-ios-simulator-framework**."
+          } >> "$GITHUB_STEP_SUMMARY"
